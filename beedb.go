@@ -26,7 +26,7 @@ type Model struct {
 }
 
 /**
- * 新注册一个ORM对象，目前写死的Mysql链接，接下来通过读取配置文件
+ * Add New sql.DB in the future i will add ConnectionPool.Get() 
  */
 func New(db *sql.DB) (m Model) {
 	m = Model{Db: db, ColumnStr: "*", PrimaryKey: "Id"}
