@@ -14,7 +14,7 @@ CREATE TABLE `userinfo` (
 	`username` VARCHAR(64) NULL,
 	`departname` VARCHAR(64) NULL,
 	`created` DATE NULL,
-	PRIMARY KEY (`id`)
+	PRIMARY KEY (`uid`)
 )
 CREATE TABLE `userdeatail` (
 	`uid` INT(10) NULL,
