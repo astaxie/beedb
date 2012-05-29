@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/astaxie/beedb"
-	_ "github.com/mikespook/mymysql/godrv"
+	_ "github.com/ziutek/mymysql/godrv"
 	"time"
 	"database/sql"
 )
@@ -32,7 +32,7 @@ type Userinfo struct {
 }
 
 func main() {
-	db, err := sql.Open("mymysql", "test/xiemengjun/123456?charset=utf8")
+	db, err := sql.Open("mymysql", "test/xiemengjun/123456")
 	if err != nil {
 		panic(err)
 	}
@@ -43,13 +43,13 @@ func main() {
 	fmt.Println(a)
 
 	//Original SQL Group By 
-	a, _ := orm.SetTable("userinfo").GroupBy("username").Having("username='astaxie'").FindMap()
-	fmt.Println(a)
+	b, _ := orm.SetTable("userinfo").GroupBy("username").Having("username='astaxie'").FindMap()
+	fmt.Println(b)
 
 	//Original SQL Backinfo resultsSlice []map[string][]byte 
 	//default PrimaryKey id
-	a, _ := orm.SetTable("userinfo").SetPK("uid").Where(2).Select("uid,username").FindMap()
-	fmt.Println(a)
+	c, _ := orm.SetTable("userinfo").SetPK("uid").Where(2).Select("uid,username").FindMap()
+	fmt.Println(c)
 
 	//original SQL update 
 	t := make(map[string]interface{})
