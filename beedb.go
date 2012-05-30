@@ -78,7 +78,7 @@ func (orm *Model) Select(colums string) *Model {
 	return orm
 }
 
-func (orm *Model) SacnPK(output interface{}) *Model {
+func (orm *Model) ScanPK(output interface{}) *Model {
 	if reflect.TypeOf(reflect.Indirect(reflect.ValueOf(output)).Interface()).Kind() == reflect.Slice {
 		sliceValue := reflect.Indirect(reflect.ValueOf(output))
 		sliceElementType := sliceValue.Type().Elem()
@@ -118,10 +118,12 @@ func (orm *Model) Having(conditions string) *Model {
 }
 
 func (orm *Model) Find(output interface{}) error {
-	orm.SacnPK(output)
+	orm.ScanPK(output)
 	var keys []string
 	results, _ := scanStructIntoMap(output)
-	orm.TableName = snakeCasedName(StructName(output))
+	if orm.TableName == "" {
+		orm.TableName = snakeCasedName(StructName(output))
+	}
 	for key, _ := range results {
 		keys = append(keys, key)
 	}
@@ -143,7 +145,7 @@ func (orm *Model) Find(output interface{}) error {
 }
 
 func (orm *Model) FindAll(rowsSlicePtr interface{}) error {
-	orm.SacnPK(rowsSlicePtr)
+	orm.ScanPK(rowsSlicePtr)
 	sliceValue := reflect.Indirect(reflect.ValueOf(rowsSlicePtr))
 	if sliceValue.Kind() != reflect.Slice {
 		return errors.New("needs a pointer to a slice")
@@ -153,7 +155,9 @@ func (orm *Model) FindAll(rowsSlicePtr interface{}) error {
 	st := reflect.New(sliceElementType)
 	var keys []string
 	results, _ := scanStructIntoMap(st.Interface())
-	orm.TableName = getTableName(rowsSlicePtr)
+	if orm.TableName == "" {
+		orm.TableName = getTableName(rowsSlicePtr)
+	}
 	for key, _ := range results {
 		keys = append(keys, key)
 	}
@@ -173,19 +177,19 @@ func (orm *Model) FindAll(rowsSlicePtr interface{}) error {
 }
 
 func (orm *Model) FindMap() (resultsSlice []map[string][]byte, err error) {
+	defer orm.InitModel()
 	sqls := orm.generateSql()
-	fmt.Println(sqls)
 	s, err := orm.Db.Prepare(sqls)
 	if err != nil {
 		return nil, err
 	}
 	res, err := s.Query(orm.ParamStr...)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	fields, err := res.Columns()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	for res.Next() {
 		result := make(map[string][]byte)
@@ -195,7 +199,7 @@ func (orm *Model) FindMap() (resultsSlice []map[string][]byte, err error) {
 			scanResultContainers = append(scanResultContainers, &scanResultContainer)
 		}
 		if err := res.Scan(scanResultContainers...); err != nil {
-			panic(err)
+			return nil, err
 		}
 		for ii, key := range fields {
 			rawValue := reflect.Indirect(reflect.ValueOf(scanResultContainers[ii]))
@@ -276,15 +280,17 @@ func (orm *Model) Execute(finalQueryString string, args ...interface{}) (sql.Res
 
 //if the struct has PrimaryKey == 0 insert else update
 func (orm *Model) Save(output interface{}) interface{} {
-	orm.SacnPK(output)
+	orm.ScanPK(output)
 	results, _ := scanStructIntoMap(output)
-	orm.TableName = snakeCasedName(StructName(output))
+	if orm.TableName == "" {
+		orm.TableName = snakeCasedName(StructName(output))
+	}
 	id := results[strings.ToLower(orm.PrimaryKey)]
 	delete(results, strings.ToLower(orm.PrimaryKey))
 	if reflect.ValueOf(id).Int() == 0 {
 		id, err := orm.Insert(results)
 		if err != nil {
-			return nil
+			return err
 		}
 		structPtr := reflect.ValueOf(output)
 		structVal := structPtr.Elem()
@@ -310,6 +316,7 @@ func (orm *Model) Save(output interface{}) interface{} {
 
 //inert one info
 func (orm *Model) Insert(properties map[string]interface{}) (int64, error) {
+	defer orm.InitModel()
 	var keys []string
 	var placeholders []string
 	var args []interface{}
@@ -352,6 +359,7 @@ func (orm *Model) InsertBatch(rows []map[string]interface{}) ([]int64, error) {
 
 // update info
 func (orm *Model) Update(properties map[string]interface{}) (int64, error) {
+	defer orm.InitModel()
 	var updates []string
 	var args []interface{}
 
@@ -383,9 +391,12 @@ func (orm *Model) Update(properties map[string]interface{}) (int64, error) {
 }
 
 func (orm *Model) Delete(output interface{}) (int64, error) {
-	orm.SacnPK(output)
+	defer orm.InitModel()
+	orm.ScanPK(output)
 	results, _ := scanStructIntoMap(output)
-	orm.TableName = snakeCasedName(StructName(output))
+	if orm.TableName == "" {
+		orm.TableName = snakeCasedName(StructName(output))
+	}
 	id := results[strings.ToLower(orm.PrimaryKey)]
 	condition := fmt.Sprintf("`%v`='%v'", orm.PrimaryKey, id)
 	statement := fmt.Sprintf("DELETE FROM `%v` WHERE %v",
@@ -404,8 +415,11 @@ func (orm *Model) Delete(output interface{}) (int64, error) {
 }
 
 func (orm *Model) DeleteAll(rowsSlicePtr interface{}) (int64, error) {
-	orm.SacnPK(rowsSlicePtr)
-	orm.TableName = getTableName(rowsSlicePtr)
+	defer orm.InitModel()
+	orm.ScanPK(rowsSlicePtr)
+	if orm.TableName == "" {
+		orm.TableName = getTableName(rowsSlicePtr)
+	}
 	var ids []string
 	val := reflect.Indirect(reflect.ValueOf(rowsSlicePtr))
 	if val.Len() == 0 {
@@ -426,7 +440,6 @@ func (orm *Model) DeleteAll(rowsSlicePtr interface{}) (int64, error) {
 	statement := fmt.Sprintf("DELETE FROM `%v` WHERE %v",
 		orm.TableName,
 		condition)
-	fmt.Println(statement)
 	res, err := orm.Execute(statement)
 	if err != nil {
 		return -1, err
@@ -440,6 +453,7 @@ func (orm *Model) DeleteAll(rowsSlicePtr interface{}) (int64, error) {
 }
 
 func (orm *Model) DelectRow() (int64, error) {
+	defer orm.InitModel()
 	var condition string
 	if orm.WhereStr != "" {
 		condition = fmt.Sprintf("WHERE %v", orm.WhereStr)
@@ -449,7 +463,6 @@ func (orm *Model) DelectRow() (int64, error) {
 	statement := fmt.Sprintf("DELETE FROM `%v` %v",
 		orm.TableName,
 		condition)
-	fmt.Println(statement)
 	res, err := orm.Execute(statement, orm.ParamStr...)
 	if err != nil {
 		return -1, err
@@ -460,4 +473,18 @@ func (orm *Model) DelectRow() (int64, error) {
 		return -1, err
 	}
 	return Affectid, nil
+}
+
+func (orm *Model) InitModel() {
+	orm.TableName = ""
+	orm.LimitStr = 0
+	orm.OffsetStr = 0
+	orm.WhereStr = ""
+	orm.ParamStr = make([]interface{}, 100)
+	orm.OrderStr = ""
+	orm.ColumnStr = "*"
+	orm.PrimaryKey = "id"
+	orm.JoinStr = ""
+	orm.GroupByStr = ""
+	orm.HavingStr = ""
 }
