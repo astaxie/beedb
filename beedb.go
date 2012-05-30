@@ -264,7 +264,7 @@ func (orm *Model) generateSql() string {
 }
 
 //Execute sql
-func (orm *Model) Execute(finalQueryString string, args ...interface{}) (sql.Result, error) {
+func (orm *Model) Exec(finalQueryString string, args ...interface{}) (sql.Result, error) {
 	rs, err := orm.Db.Prepare(finalQueryString)
 	if err != nil {
 		return nil, err
@@ -330,7 +330,7 @@ func (orm *Model) Insert(properties map[string]interface{}) (int64, error) {
 		orm.TableName,
 		strings.Join(keys, "`, `"),
 		strings.Join(placeholders, ", "))
-	res, err := orm.Execute(statement, args...)
+	res, err := orm.Exec(statement, args...)
 	if err != nil {
 		return -1, err
 	}
@@ -378,7 +378,7 @@ func (orm *Model) Update(properties map[string]interface{}) (int64, error) {
 		orm.TableName,
 		strings.Join(updates, ", "),
 		condition)
-	res, err := orm.Execute(statement, args...)
+	res, err := orm.Exec(statement, args...)
 	if err != nil {
 		return -1, err
 	}
@@ -402,7 +402,7 @@ func (orm *Model) Delete(output interface{}) (int64, error) {
 	statement := fmt.Sprintf("DELETE FROM `%v` WHERE %v",
 		orm.TableName,
 		condition)
-	res, err := orm.Execute(statement)
+	res, err := orm.Exec(statement)
 	if err != nil {
 		return -1, err
 	}
@@ -440,7 +440,7 @@ func (orm *Model) DeleteAll(rowsSlicePtr interface{}) (int64, error) {
 	statement := fmt.Sprintf("DELETE FROM `%v` WHERE %v",
 		orm.TableName,
 		condition)
-	res, err := orm.Execute(statement)
+	res, err := orm.Exec(statement)
 	if err != nil {
 		return -1, err
 	}
@@ -463,7 +463,7 @@ func (orm *Model) DelectRow() (int64, error) {
 	statement := fmt.Sprintf("DELETE FROM `%v` %v",
 		orm.TableName,
 		condition)
-	res, err := orm.Execute(statement, orm.ParamStr...)
+	res, err := orm.Exec(statement, orm.ParamStr...)
 	if err != nil {
 		return -1, err
 	}
