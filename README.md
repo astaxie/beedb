@@ -37,7 +37,7 @@ Drivers marked with a `[*]` are tested with beedb
 
 Open a database link(may be will support ConnectionPool in the future)
 
-	db, err := sql.Open("mymysql", "test/xiemengjun/123456?charset=utf8")
+	db, err := sql.Open("mymysql", "test/xiemengjun/123456")
 	if err != nil {
 		panic(err)
 	}
