@@ -15,13 +15,13 @@ CREATE TABLE `userinfo` (
 	`departname` VARCHAR(64) NULL,
 	`created` DATE NULL,
 	PRIMARY KEY (`uid`)
-)
+);
 CREATE TABLE `userdeatail` (
 	`uid` INT(10) NULL,
 	`intro` TEXT NULL,
 	`profile` TEXT NULL,
 	PRIMARY KEY (`uid`)
-)
+);
 */
 
 var orm beedb.Model

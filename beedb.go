@@ -226,6 +226,9 @@ func (orm *Model) FindMap() (resultsSlice []map[string][]byte, err error) {
 					result[key] = rawValue.Interface().([]byte)
 					break
 				}
+			case reflect.String:
+				str = vv.String()
+				result[key] = []byte(str)
 			//时间类型	
 			case reflect.Struct:
 				str = rawValue.Interface().(time.Time).Format("2006-01-02 15:04:05.000 -0700")

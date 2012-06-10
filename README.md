@@ -11,11 +11,11 @@ All in all, it's not entirely ready for advanced use yet, but it's getting there
 
 Drivers for Go's sql package which support database/sql includes:
 
-Mysql:[github.com/ziutek/mymysql/godrv](github.com/ziutek/mymysql/godrv)`[*]`
+Mysql:[github.com/ziutek/mymysql/godrv](https://github.com/ziutek/mymysql/godrv)`[*]`
 
-PostgreSQL:[github.com/bmizerany/pq](github.com/bmizerany/pq)
+PostgreSQL:[github.com/bmizerany/pq](https://github.com/bmizerany/pq)
 
-SQLite:[github.com/mattn/go-sqlite3](github.com/mattn/go-sqlite3)
+SQLite:[github.com/mattn/go-sqlite3](https://github.com/mattn/go-sqlite3)`[*]`
 
 DB2: [bitbucket.org/phiggins/go-db2-cli](https://bitbucket.org/phiggins/go-db2-cli)
 
