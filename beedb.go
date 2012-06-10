@@ -11,18 +11,18 @@ import (
 )
 
 type Model struct {
-	Db		*sql.DB
-	TableName	string
-	LimitStr	int
-	OffsetStr	int
-	WhereStr	string
-	ParamStr	[]interface{}
-	OrderStr	string
-	ColumnStr	string
-	PrimaryKey	string
-	JoinStr		string
-	GroupByStr	string
-	HavingStr	string
+	Db         *sql.DB
+	TableName  string
+	LimitStr   int
+	OffsetStr  int
+	WhereStr   string
+	ParamStr   []interface{}
+	OrderStr   string
+	ColumnStr  string
+	PrimaryKey string
+	JoinStr    string
+	GroupByStr string
+	HavingStr  string
 }
 
 /**
@@ -288,13 +288,13 @@ func (orm *Model) Save(output interface{}) interface{} {
 	id := results[strings.ToLower(orm.PrimaryKey)]
 	delete(results, strings.ToLower(orm.PrimaryKey))
 	if reflect.ValueOf(id).Int() == 0 {
+		structPtr := reflect.ValueOf(output)
+		structVal := structPtr.Elem()
+		structField := structVal.FieldByName(orm.PrimaryKey)
 		id, err := orm.Insert(results)
 		if err != nil {
 			return err
 		}
-		structPtr := reflect.ValueOf(output)
-		structVal := structPtr.Elem()
-		structField := structVal.FieldByName(orm.PrimaryKey)
 		var v interface{}
 		x, err := strconv.Atoi(strconv.FormatInt(id, 10))
 		if err != nil {

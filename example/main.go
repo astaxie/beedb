@@ -24,11 +24,13 @@ CREATE TABLE `userdeatail` (
 )
 */
 
+var orm beedb.Model
+
 type Userinfo struct {
-	Uid		int	`PK`
-	Username	string
-	Departname	string
-	Created		time.Time
+	Uid        int `PK`
+	Username   string
+	Departname string
+	Created    time.Time
 }
 
 func main() {
@@ -36,55 +38,24 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	orm := beedb.New(db)
+	orm = beedb.New(db)
+	// insert()
+	// insertsql()
+	// a := selectone()
+	// fmt.Println(a)
+	// b := selectall()
+	// fmt.Println(b)
+	// update()
+	// updatesql()
+	// findmap()
+	// groupby()
+	// jointable()
+	//delete()
+	//deleteall()
+	//deletesql()
+}
 
-	//Original SQL Join Table
-	a, _ := orm.SetTable("userinfo").Join("LEFT", "userdeatail", "userinfo.uid=userdeatail.uid").Where("userinfo.uid=?", 1).Select("userinfo.uid,userinfo.username,userdeatail.profile").FindMap()
-	fmt.Println(a)
-
-	//Original SQL Group By 
-	b, _ := orm.SetTable("userinfo").GroupBy("username").Having("username='astaxie'").FindMap()
-	fmt.Println(b)
-
-	//Original SQL Backinfo resultsSlice []map[string][]byte 
-	//default PrimaryKey id
-	c, _ := orm.SetTable("userinfo").SetPK("uid").Where(2).Select("uid,username").FindMap()
-	fmt.Println(c)
-
-	//original SQL update 
-	t := make(map[string]interface{})
-	var j interface{}
-	j = "astaxie"
-	t["username"] = j
-	//update one
-	orm.SetTable("userinfo").SetPK("uid").Where(2).Update(t)
-	//update batch
-	orm.SetTable("userinfo").Where("uid>?", 3).Update(t)
-
-	// add one
-	add := make(map[string]interface{})
-	j = "astaxie"
-	add["username"] = j
-	j = "cloud develop"
-	add["departname"] = j
-	j = "2012-12-02"
-	add["created"] = j
-
-	orm.SetTable("userinfo").Insert(add)
-
-	//original SQL delete
-	orm.SetTable("userinfo").Where("uid>?", 3).DelectRow()
-
-	//get all data
-	var alluser []Userinfo
-	orm.Limit(10).Where("uid>?", 1).FindAll(&alluser)
-	fmt.Println(alluser)
-
-	//get one info
-	var one Userinfo
-	orm.Where("uid=?", 27).Find(&one)
-	fmt.Println(one)
-
+func insert() {
 	//save data
 	var saveone Userinfo
 	saveone.Username = "Test Add User"
@@ -92,17 +63,83 @@ func main() {
 	saveone.Created = time.Now()
 	orm.Save(&saveone)
 	fmt.Println(saveone)
+}
 
+func insertsql() {
+	// add one
+	add := make(map[string]interface{})
+	add["username"] = "astaxie"
+	add["departname"] = "cloud develop"
+	add["created"] = "2012-12-02"
+	orm.SetTable("userinfo").Insert(add)
+}
+
+func selectone() Userinfo {
+	//get one info
+	var one Userinfo
+	orm.Where("uid=?", 1).Find(&one)
+	return one
+}
+
+func selectall() []Userinfo {
+	//get all data
+	var alluser []Userinfo
+	orm.Limit(10).Where("uid>?", 1).FindAll(&alluser)
+	return alluser
+}
+func update() {
 	// //update data
+	var saveone Userinfo
+	saveone.Uid = 1
 	saveone.Username = "Update Username"
 	saveone.Departname = "Update Departname"
 	saveone.Created = time.Now()
 	orm.Save(&saveone)
 	fmt.Println(saveone)
+}
 
+func updatesql() {
+	//original SQL update 
+	t := make(map[string]interface{})
+	t["username"] = "updateastaxie"
+	//update one
+	orm.SetTable("userinfo").SetPK("uid").Where(2).Update(t)
+	//update batch
+	orm.SetTable("userinfo").Where("uid>?", 3).Update(t)
+}
+
+func findmap() {
+	//Original SQL Backinfo resultsSlice []map[string][]byte 
+	//default PrimaryKey id
+	c, _ := orm.SetTable("userinfo").SetPK("uid").Where(2).Select("uid,username").FindMap()
+	fmt.Println(c)
+}
+
+func groupby() {
+	//Original SQL Group By 
+	b, _ := orm.SetTable("userinfo").GroupBy("username").Having("username='updateastaxie'").FindMap()
+	fmt.Println(b)
+}
+
+func jointable() {
+	//Original SQL Join Table
+	a, _ := orm.SetTable("userinfo").Join("LEFT", "userdeatail", "userinfo.uid=userdeatail.uid").Where("userinfo.uid=?", 1).Select("userinfo.uid,userinfo.username,userdeatail.profile").FindMap()
+	fmt.Println(a)
+}
+
+func delete() {
 	// // //delete one data
+	saveone := selectone()
 	orm.Delete(&saveone)
+}
 
+func deletesql() {
+	//original SQL delete
+	orm.SetTable("userinfo").Where("uid>?", 3).DelectRow()
+}
+
+func deleteall() {
 	// //delete all data
+	alluser := selectall()
 	orm.DeleteAll(&alluser)
 }
