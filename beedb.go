@@ -183,10 +183,12 @@ func (orm *Model) FindMap() (resultsSlice []map[string][]byte, err error) {
 	if err != nil {
 		return nil, err
 	}
+	defer s.Close()
 	res, err := s.Query(orm.ParamStr...)
 	if err != nil {
 		return nil, err
 	}
+	defer res.Close()
 	fields, err := res.Columns()
 	if err != nil {
 		return nil, err
@@ -483,7 +485,7 @@ func (orm *Model) InitModel() {
 	orm.LimitStr = 0
 	orm.OffsetStr = 0
 	orm.WhereStr = ""
-	orm.ParamStr = make([]interface{}, 100)
+	orm.ParamStr = make([]interface{}, 0)
 	orm.OrderStr = ""
 	orm.ColumnStr = "*"
 	orm.PrimaryKey = "id"
