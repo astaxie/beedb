@@ -13,7 +13,7 @@ Drivers for Go's sql package which support database/sql includes:
 
 Mysql:[github.com/ziutek/mymysql/godrv](https://github.com/ziutek/mymysql/godrv)`[*]`
 
-PostgreSQL:[github.com/bmizerany/pq](https://github.com/bmizerany/pq)
+PostgreSQL:[github.com/bmizerany/pq](https://github.com/bmizerany/pq)`[*]`
 
 SQLite:[github.com/mattn/go-sqlite3](https://github.com/mattn/go-sqlite3)`[*]`
 

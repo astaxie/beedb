@@ -11,25 +11,32 @@ import (
 )
 
 type Model struct {
-	Db         *sql.DB
-	TableName  string
-	LimitStr   int
-	OffsetStr  int
-	WhereStr   string
-	ParamStr   []interface{}
-	OrderStr   string
-	ColumnStr  string
-	PrimaryKey string
-	JoinStr    string
-	GroupByStr string
-	HavingStr  string
+	Db              *sql.DB
+	TableName       string
+	LimitStr        int
+	OffsetStr       int
+	WhereStr        string
+	ParamStr        []interface{}
+	OrderStr        string
+	ColumnStr       string
+	PrimaryKey      string
+	JoinStr         string
+	GroupByStr      string
+	HavingStr       string
+	QuoteIdentifier string
+	ParamIdentifier string
+	ParamIteration  int
 }
 
 /**
  * Add New sql.DB in the future i will add ConnectionPool.Get() 
  */
-func New(db *sql.DB) (m Model) {
-	m = Model{Db: db, ColumnStr: "*", PrimaryKey: "Id"}
+func New(db *sql.DB, options ...interface{}) (m Model) {
+	if len(options) == 0 {
+		m = Model{Db: db, ColumnStr: "*", PrimaryKey: "Id", QuoteIdentifier: "`", ParamIdentifier: "?", ParamIteration: 1}
+	} else if options[0] == "pg" {
+		m = Model{Db: db, ColumnStr: "id", PrimaryKey: "id", QuoteIdentifier: "\"", ParamIdentifier: "key", ParamIteration: 1}
+	}
 	return
 }
 
@@ -48,7 +55,12 @@ func (orm *Model) Where(querystring interface{}, args ...interface{}) *Model {
 	case string:
 		orm.WhereStr = querystring
 	case int:
-		orm.WhereStr = fmt.Sprintf("`%v` = ?", orm.PrimaryKey)
+		if orm.ParamIdentifier == "key" {
+			orm.WhereStr = fmt.Sprintf("%v%v%v = $%v", orm.QuoteIdentifier, orm.PrimaryKey, orm.QuoteIdentifier, orm.ParamIteration)
+		} else {
+			orm.WhereStr = fmt.Sprintf("%v%v%v = ?", orm.QuoteIdentifier, orm.PrimaryKey, orm.QuoteIdentifier)
+			orm.ParamIteration++
+		}
 		args = append(args, querystring)
 	}
 	orm.ParamStr = args
@@ -179,6 +191,7 @@ func (orm *Model) FindAll(rowsSlicePtr interface{}) error {
 func (orm *Model) FindMap() (resultsSlice []map[string][]byte, err error) {
 	defer orm.InitModel()
 	sqls := orm.generateSql()
+	//fmt.Println(sqls)
 	s, err := orm.Db.Prepare(sqls)
 	if err != nil {
 		return nil, err
@@ -309,7 +322,12 @@ func (orm *Model) Save(output interface{}) interface{} {
 		structField.Set(reflect.ValueOf(v))
 		return nil
 	} else {
-		condition := fmt.Sprintf("`%v`=?", orm.PrimaryKey)
+		var condition string
+		if orm.ParamIdentifier == "key" {
+			condition = fmt.Sprintf("%v%v%v=$%v", orm.QuoteIdentifier, strings.ToLower(orm.PrimaryKey), orm.QuoteIdentifier, orm.ParamIteration)
+		} else {
+			condition = fmt.Sprintf("%v%v%v=?", orm.QuoteIdentifier, orm.PrimaryKey, orm.QuoteIdentifier)
+		}
 		orm.Where(condition, id)
 		_, err := orm.Update(results)
 		if err != nil {
@@ -325,15 +343,25 @@ func (orm *Model) Insert(properties map[string]interface{}) (int64, error) {
 	var keys []string
 	var placeholders []string
 	var args []interface{}
-
 	for key, val := range properties {
 		keys = append(keys, key)
-		placeholders = append(placeholders, "?")
+		if orm.ParamIdentifier == "key" {
+			ds := fmt.Sprintf("$%d", orm.ParamIteration)
+			placeholders = append(placeholders, ds)
+		} else {
+			placeholders = append(placeholders, "?")
+		}
+		orm.ParamIteration++
 		args = append(args, val)
 	}
-	statement := fmt.Sprintf("INSERT INTO `%v` (`%v`) VALUES (%v)",
+	ss := fmt.Sprintf("%v,%v", orm.QuoteIdentifier, orm.QuoteIdentifier)
+	statement := fmt.Sprintf("INSERT INTO %v%v%v (%v%v%v) VALUES (%v)",
+		orm.QuoteIdentifier,
 		orm.TableName,
-		strings.Join(keys, "`, `"),
+		orm.QuoteIdentifier,
+		orm.QuoteIdentifier,
+		strings.Join(keys, ss),
+		orm.QuoteIdentifier,
 		strings.Join(placeholders, ", "))
 	res, err := orm.Exec(statement, args...)
 	if err != nil {
@@ -367,20 +395,34 @@ func (orm *Model) Update(properties map[string]interface{}) (int64, error) {
 	defer orm.InitModel()
 	var updates []string
 	var args []interface{}
-
 	for key, val := range properties {
-		updates = append(updates, fmt.Sprintf("`%v` = ?", key))
+		if orm.ParamIdentifier == "key" {
+			ds := fmt.Sprintf("$%d", orm.ParamIteration)
+			updates = append(updates, fmt.Sprintf("%v%v%v = %v", orm.QuoteIdentifier, key, orm.QuoteIdentifier, ds))
+		} else {
+			updates = append(updates, fmt.Sprintf("%v%v%v = ?", orm.QuoteIdentifier, key, orm.QuoteIdentifier))
+		}
 		args = append(args, val)
+		orm.ParamIteration++
 	}
 	args = append(args, orm.ParamStr...)
+	if orm.ParamIdentifier == "key" {
+		if n := len(orm.ParamStr); n > 0 {
+			for i := 1; i <= n; i++ {
+				orm.WhereStr = strings.Replace(orm.WhereStr, "$"+strconv.Itoa(i), "$"+strconv.Itoa(orm.ParamIteration), 1)
+			}
+		}
+	}
 	var condition string
 	if orm.WhereStr != "" {
 		condition = fmt.Sprintf("WHERE %v", orm.WhereStr)
 	} else {
 		condition = ""
 	}
-	statement := fmt.Sprintf("UPDATE `%v` SET %v %v",
+	statement := fmt.Sprintf("UPDATE %v%v%v SET %v %v",
+		orm.QuoteIdentifier,
 		orm.TableName,
+		orm.QuoteIdentifier,
 		strings.Join(updates, ", "),
 		condition)
 	res, err := orm.Exec(statement, args...)
@@ -403,10 +445,13 @@ func (orm *Model) Delete(output interface{}) (int64, error) {
 		orm.TableName = snakeCasedName(StructName(output))
 	}
 	id := results[strings.ToLower(orm.PrimaryKey)]
-	condition := fmt.Sprintf("`%v`='%v'", orm.PrimaryKey, id)
-	statement := fmt.Sprintf("DELETE FROM `%v` WHERE %v",
+	condition := fmt.Sprintf("%v%v%v='%v'", orm.QuoteIdentifier, strings.ToLower(orm.PrimaryKey), orm.QuoteIdentifier, id)
+	statement := fmt.Sprintf("DELETE FROM %v%v%v WHERE %v",
+		orm.QuoteIdentifier,
 		orm.TableName,
+		orm.QuoteIdentifier,
 		condition)
+	fmt.Println(statement)
 	res, err := orm.Exec(statement)
 	if err != nil {
 		return -1, err
@@ -441,9 +486,11 @@ func (orm *Model) DeleteAll(rowsSlicePtr interface{}) (int64, error) {
 			ids = append(ids, str)
 		}
 	}
-	condition := fmt.Sprintf("`%v` in ('%v')", orm.PrimaryKey, strings.Join(ids, "','"))
-	statement := fmt.Sprintf("DELETE FROM `%v` WHERE %v",
+	condition := fmt.Sprintf("%v%v%v in ('%v')", orm.QuoteIdentifier, strings.ToLower(orm.PrimaryKey), orm.QuoteIdentifier, strings.Join(ids, "','"))
+	statement := fmt.Sprintf("DELETE FROM %v%v%v WHERE %v",
+		orm.QuoteIdentifier,
 		orm.TableName,
+		orm.QuoteIdentifier,
 		condition)
 	res, err := orm.Exec(statement)
 	if err != nil {
@@ -465,8 +512,10 @@ func (orm *Model) DelectRow() (int64, error) {
 	} else {
 		condition = ""
 	}
-	statement := fmt.Sprintf("DELETE FROM `%v` %v",
+	statement := fmt.Sprintf("DELETE FROM %v%v%v %v",
+		orm.QuoteIdentifier,
 		orm.TableName,
+		orm.QuoteIdentifier,
 		condition)
 	res, err := orm.Exec(statement, orm.ParamStr...)
 	if err != nil {
@@ -492,4 +541,5 @@ func (orm *Model) InitModel() {
 	orm.JoinStr = ""
 	orm.GroupByStr = ""
 	orm.HavingStr = ""
+	orm.ParamIteration = 1
 }
