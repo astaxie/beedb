@@ -6,6 +6,7 @@ import (
 	_ "github.com/ziutek/mymysql/godrv"
 	"time"
 	"database/sql"
+	"strconv"
 )
 
 /*
@@ -39,6 +40,7 @@ func main() {
 		panic(err)
 	}
 	orm = beedb.New(db)
+	insertbatch()
 	// insert()
 	// insertsql()
 	// a := selectone()
@@ -72,6 +74,20 @@ func insertsql() {
 	add["departname"] = "cloud develop"
 	add["created"] = "2012-12-02"
 	orm.SetTable("userinfo").Insert(add)
+}
+
+func insertbatch() {
+	rows := make([]map[string]interface{}, 10)
+	for i := 0; i < 10; i++ {
+		add := make(map[string]interface{})
+		name := "person" + strconv.Itoa(i)
+		add["username"] = name
+		add["departname"] = "IT"
+		add["created"] = "2012-06-13"
+		rows[i] = add
+	}
+	fmt.Println(rows)
+	orm.SetTable("userinfo").InsertBatch(rows)
 }
 
 func selectone() Userinfo {

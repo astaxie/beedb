@@ -35,7 +35,9 @@ func New(db *sql.DB, options ...interface{}) (m Model) {
 	if len(options) == 0 {
 		m = Model{Db: db, ColumnStr: "*", PrimaryKey: "Id", QuoteIdentifier: "`", ParamIdentifier: "?", ParamIteration: 1}
 	} else if options[0] == "pg" {
-		m = Model{Db: db, ColumnStr: "id", PrimaryKey: "id", QuoteIdentifier: "\"", ParamIdentifier: "key", ParamIteration: 1}
+		m = Model{Db: db, ColumnStr: "id", PrimaryKey: "id", QuoteIdentifier: "\"", ParamIdentifier: options[0].(string), ParamIteration: 1}
+	} else if options[0] == "mssql" {
+		m = Model{Db: db, ColumnStr: "id", PrimaryKey: "id", QuoteIdentifier: "", ParamIdentifier: options[0].(string), ParamIteration: 1}
 	}
 	return
 }
@@ -55,7 +57,7 @@ func (orm *Model) Where(querystring interface{}, args ...interface{}) *Model {
 	case string:
 		orm.WhereStr = querystring
 	case int:
-		if orm.ParamIdentifier == "key" {
+		if orm.ParamIdentifier == "pg" {
 			orm.WhereStr = fmt.Sprintf("%v%v%v = $%v", orm.QuoteIdentifier, orm.PrimaryKey, orm.QuoteIdentifier, orm.ParamIteration)
 		} else {
 			orm.WhereStr = fmt.Sprintf("%v%v%v = ?", orm.QuoteIdentifier, orm.PrimaryKey, orm.QuoteIdentifier)
@@ -191,7 +193,6 @@ func (orm *Model) FindAll(rowsSlicePtr interface{}) error {
 func (orm *Model) FindMap() (resultsSlice []map[string][]byte, err error) {
 	defer orm.InitModel()
 	sqls := orm.generateSql()
-	//fmt.Println(sqls)
 	s, err := orm.Db.Prepare(sqls)
 	if err != nil {
 		return nil, err
@@ -256,29 +257,74 @@ func (orm *Model) FindMap() (resultsSlice []map[string][]byte, err error) {
 	return resultsSlice, nil
 }
 
-func (orm *Model) generateSql() string {
-	a := fmt.Sprintf("SELECT %v FROM %v", orm.ColumnStr, orm.TableName)
-	if orm.JoinStr != "" {
-		a = fmt.Sprintf("%v %v", a, orm.JoinStr)
+func (orm *Model) generateSql() (a string) {
+	if orm.ParamIdentifier == "mssql" {
+		if orm.OffsetStr > 0 {
+			a = fmt.Sprintf("select ROW_NUMBER() OVER(order by %v )as rownum,%v from %v",
+				orm.PrimaryKey,
+				orm.ColumnStr,
+				orm.TableName)
+			if orm.WhereStr != "" {
+				a = fmt.Sprintf("%v WHERE %v", a, orm.WhereStr)
+			}
+			a = fmt.Sprintf("select * from (%v) "+
+				"as a where rownum between %v and %v",
+				a,
+				orm.OffsetStr,
+				orm.LimitStr)
+		} else if orm.LimitStr > 0 {
+			a = fmt.Sprintf("SELECT top %v %v FROM %v", orm.LimitStr, orm.ColumnStr, orm.TableName)
+			if orm.WhereStr != "" {
+				a = fmt.Sprintf("%v WHERE %v", a, orm.WhereStr)
+			}
+			if orm.GroupByStr != "" {
+				a = fmt.Sprintf("%v %v", a, orm.GroupByStr)
+			}
+			if orm.HavingStr != "" {
+				a = fmt.Sprintf("%v %v", a, orm.HavingStr)
+			}
+			if orm.OrderStr != "" {
+				a = fmt.Sprintf("%v ORDER BY %v", a, orm.OrderStr)
+			}
+		} else {
+			a = fmt.Sprintf("SELECT %v FROM %v", orm.ColumnStr, orm.TableName)
+			if orm.WhereStr != "" {
+				a = fmt.Sprintf("%v WHERE %v", a, orm.WhereStr)
+			}
+			if orm.GroupByStr != "" {
+				a = fmt.Sprintf("%v %v", a, orm.GroupByStr)
+			}
+			if orm.HavingStr != "" {
+				a = fmt.Sprintf("%v %v", a, orm.HavingStr)
+			}
+			if orm.OrderStr != "" {
+				a = fmt.Sprintf("%v ORDER BY %v", a, orm.OrderStr)
+			}
+		}
+	} else {
+		a = fmt.Sprintf("SELECT %v FROM %v", orm.ColumnStr, orm.TableName)
+		if orm.JoinStr != "" {
+			a = fmt.Sprintf("%v %v", a, orm.JoinStr)
+		}
+		if orm.WhereStr != "" {
+			a = fmt.Sprintf("%v WHERE %v", a, orm.WhereStr)
+		}
+		if orm.GroupByStr != "" {
+			a = fmt.Sprintf("%v %v", a, orm.GroupByStr)
+		}
+		if orm.HavingStr != "" {
+			a = fmt.Sprintf("%v %v", a, orm.HavingStr)
+		}
+		if orm.OrderStr != "" {
+			a = fmt.Sprintf("%v ORDER BY %v", a, orm.OrderStr)
+		}
+		if orm.OffsetStr > 0 {
+			a = fmt.Sprintf("%v LIMIT %v, %v", a, orm.OffsetStr, orm.LimitStr)
+		} else if orm.LimitStr > 0 {
+			a = fmt.Sprintf("%v LIMIT %v", a, orm.LimitStr)
+		}
 	}
-	if orm.WhereStr != "" {
-		a = fmt.Sprintf("%v WHERE %v", a, orm.WhereStr)
-	}
-	if orm.GroupByStr != "" {
-		a = fmt.Sprintf("%v %v", a, orm.GroupByStr)
-	}
-	if orm.HavingStr != "" {
-		a = fmt.Sprintf("%v %v", a, orm.HavingStr)
-	}
-	if orm.OrderStr != "" {
-		a = fmt.Sprintf("%v ORDER BY %v", a, orm.OrderStr)
-	}
-	if orm.OffsetStr > 0 {
-		a = fmt.Sprintf("%v LIMIT %v, %v", a, orm.OffsetStr, orm.LimitStr)
-	} else if orm.LimitStr > 0 {
-		a = fmt.Sprintf("%v LIMIT %v", a, orm.LimitStr)
-	}
-	return a
+	return
 }
 
 //Execute sql
@@ -323,7 +369,7 @@ func (orm *Model) Save(output interface{}) interface{} {
 		return nil
 	} else {
 		var condition string
-		if orm.ParamIdentifier == "key" {
+		if orm.ParamIdentifier == "pg" {
 			condition = fmt.Sprintf("%v%v%v=$%v", orm.QuoteIdentifier, strings.ToLower(orm.PrimaryKey), orm.QuoteIdentifier, orm.ParamIteration)
 		} else {
 			condition = fmt.Sprintf("%v%v%v=?", orm.QuoteIdentifier, orm.PrimaryKey, orm.QuoteIdentifier)
@@ -345,7 +391,7 @@ func (orm *Model) Insert(properties map[string]interface{}) (int64, error) {
 	var args []interface{}
 	for key, val := range properties {
 		keys = append(keys, key)
-		if orm.ParamIdentifier == "key" {
+		if orm.ParamIdentifier == "pg" {
 			ds := fmt.Sprintf("$%d", orm.ParamIteration)
 			placeholders = append(placeholders, ds)
 		} else {
@@ -363,27 +409,36 @@ func (orm *Model) Insert(properties map[string]interface{}) (int64, error) {
 		strings.Join(keys, ss),
 		orm.QuoteIdentifier,
 		strings.Join(placeholders, ", "))
-	res, err := orm.Exec(statement, args...)
-	if err != nil {
-		return -1, err
+	if orm.ParamIdentifier == "pg" {
+		statement = fmt.Sprintf("%v RETURNING %v", statement, orm.PrimaryKey)
+		var id int64
+		orm.Db.QueryRow(statement, args...).Scan(&id)
+		return id, nil
+	} else {
+		res, err := orm.Exec(statement, args...)
+		if err != nil {
+			return -1, err
+		}
+
+		id, err := res.LastInsertId()
+
+		if err != nil {
+			return -1, err
+		}
+		return id, nil
 	}
-
-	id, err := res.LastInsertId()
-
-	if err != nil {
-		return -1, err
-	}
-
-	return id, nil
+	return -1, nil
 }
 
 //insert batch info
 func (orm *Model) InsertBatch(rows []map[string]interface{}) ([]int64, error) {
 	var ids []int64
+	tablename := orm.TableName
 	if len(rows) <= 0 {
 		return ids, nil
 	}
 	for i := 0; i < len(rows); i++ {
+		orm.TableName = tablename
 		id, _ := orm.Insert(rows[i])
 		ids = append(ids, id)
 	}
@@ -396,7 +451,7 @@ func (orm *Model) Update(properties map[string]interface{}) (int64, error) {
 	var updates []string
 	var args []interface{}
 	for key, val := range properties {
-		if orm.ParamIdentifier == "key" {
+		if orm.ParamIdentifier == "pg" {
 			ds := fmt.Sprintf("$%d", orm.ParamIteration)
 			updates = append(updates, fmt.Sprintf("%v%v%v = %v", orm.QuoteIdentifier, key, orm.QuoteIdentifier, ds))
 		} else {
@@ -406,7 +461,7 @@ func (orm *Model) Update(properties map[string]interface{}) (int64, error) {
 		orm.ParamIteration++
 	}
 	args = append(args, orm.ParamStr...)
-	if orm.ParamIdentifier == "key" {
+	if orm.ParamIdentifier == "pg" {
 		if n := len(orm.ParamStr); n > 0 {
 			for i := 1; i <= n; i++ {
 				orm.WhereStr = strings.Replace(orm.WhereStr, "$"+strconv.Itoa(i), "$"+strconv.Itoa(orm.ParamIteration), 1)
@@ -451,7 +506,6 @@ func (orm *Model) Delete(output interface{}) (int64, error) {
 		orm.TableName,
 		orm.QuoteIdentifier,
 		condition)
-	fmt.Println(statement)
 	res, err := orm.Exec(statement)
 	if err != nil {
 		return -1, err
