@@ -19,9 +19,9 @@ SQLite:[github.com/mattn/go-sqlite3](https://github.com/mattn/go-sqlite3)`[*]`
 
 DB2: [bitbucket.org/phiggins/go-db2-cli](https://bitbucket.org/phiggins/go-db2-cli)
 
-MS ADODB: [github.com/mattn/go-adodb](https://github.com/mattn/go-adodb)
+MS ADODB: [github.com/mattn/go-adodb](https://github.com/mattn/go-adodb)`[*]`
 
-ODBC: [bitbucket.org/miquella/mgodbc](https://bitbucket.org/miquella/mgodbc)
+ODBC: [bitbucket.org/miquella/mgodbc](https://bitbucket.org/miquella/mgodbc)`[*]`
 
 Oracle: [github.com/mattn/go-oci8](https://github.com/mattn/go-oci8)
 
