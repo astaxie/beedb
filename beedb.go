@@ -558,7 +558,7 @@ func (orm *Model) DeleteAll(rowsSlicePtr interface{}) (int64, error) {
 	return Affectid, nil
 }
 
-func (orm *Model) DelectRow() (int64, error) {
+func (orm *Model) DeleteRow() (int64, error) {
 	defer orm.InitModel()
 	var condition string
 	if orm.WhereStr != "" {

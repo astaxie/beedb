@@ -40,7 +40,7 @@ func main() {
 		panic(err)
 	}
 	orm = beedb.New(db)
-	insertbatch()
+	//insertbatch()
 	// insert()
 	// insertsql()
 	// a := selectone()
@@ -48,7 +48,7 @@ func main() {
 	// b := selectall()
 	// fmt.Println(b)
 	// update()
-	// updatesql()
+	updatesql()
 	//findmap()
 	//groupby()
 	//jointable()
@@ -121,7 +121,7 @@ func updatesql() {
 	//update one
 	orm.SetTable("userinfo").SetPK("uid").Where(2).Update(t)
 	//update batch
-	orm.SetTable("userinfo").Where("uid>?", 3).Update(t)
+	//orm.SetTable("userinfo").Where("uid>?", 3).Update(t)
 }
 
 func findmap() {
@@ -151,7 +151,7 @@ func delete() {
 
 func deletesql() {
 	//original SQL delete
-	orm.SetTable("userinfo").Where("uid>?", 3).DelectRow()
+	orm.SetTable("userinfo").Where("uid>?", 3).DeleteRow()
 }
 
 func deleteall() {

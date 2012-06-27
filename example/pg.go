@@ -142,7 +142,7 @@ func delete() {
 
 func deletesql() {
 	//original SQL delete
-	orm.SetTable("userinfo").Where("uid>$1", 3).DelectRow()
+	orm.SetTable("userinfo").Where("uid>$1", 3).DeleteRow()
 }
 
 func deleteall() {
