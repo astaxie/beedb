@@ -1,12 +1,12 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/astaxie/beedb"
 	_ "github.com/ziutek/mymysql/godrv"
-	"time"
-	"database/sql"
 	"strconv"
+	"time"
 )
 
 /*
@@ -48,8 +48,8 @@ func main() {
 	// b := selectall()
 	// fmt.Println(b)
 	// update()
-	updatesql()
-	//findmap()
+	//updatesql()
+	findmap()
 	//groupby()
 	//jointable()
 	//delete()
@@ -127,7 +127,12 @@ func updatesql() {
 func findmap() {
 	//Original SQL Backinfo resultsSlice []map[string][]byte 
 	//default PrimaryKey id
-	c, _ := orm.SetTable("userinfo").SetPK("uid").Where(2).Select("uid,username").FindMap()
+	c, _ := orm.
+		SetTable("userinfo").
+		SetPK("uid").
+		Where("username like ?", "%per%").
+		Select("uid,username").
+		FindMap()
 	fmt.Println(c)
 }
 

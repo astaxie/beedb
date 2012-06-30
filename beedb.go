@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+var OnDebug = false
+
 type Model struct {
 	Db              *sql.DB
 	TableName       string
@@ -193,6 +195,10 @@ func (orm *Model) FindAll(rowsSlicePtr interface{}) error {
 func (orm *Model) FindMap() (resultsSlice []map[string][]byte, err error) {
 	defer orm.InitModel()
 	sqls := orm.generateSql()
+	if OnDebug {
+		fmt.Println(sqls)
+		fmt.Println(orm)
+	}
 	s, err := orm.Db.Prepare(sqls)
 	if err != nil {
 		return nil, err
@@ -343,7 +349,7 @@ func (orm *Model) Exec(finalQueryString string, args ...interface{}) (sql.Result
 }
 
 //if the struct has PrimaryKey == 0 insert else update
-func (orm *Model) Save(output interface{}) interface{} {
+func (orm *Model) Save(output interface{}) error {
 	orm.ScanPK(output)
 	results, _ := scanStructIntoMap(output)
 	if orm.TableName == "" {
@@ -409,6 +415,10 @@ func (orm *Model) Insert(properties map[string]interface{}) (int64, error) {
 		strings.Join(keys, ss),
 		orm.QuoteIdentifier,
 		strings.Join(placeholders, ", "))
+	if OnDebug {
+		fmt.Println(statement)
+		fmt.Println(orm)
+	}
 	if orm.ParamIdentifier == "pg" {
 		statement = fmt.Sprintf("%v RETURNING %v", statement, orm.PrimaryKey)
 		var id int64
@@ -480,6 +490,10 @@ func (orm *Model) Update(properties map[string]interface{}) (int64, error) {
 		orm.QuoteIdentifier,
 		strings.Join(updates, ", "),
 		condition)
+	if OnDebug {
+		fmt.Println(statement)
+		fmt.Println(orm)
+	}
 	res, err := orm.Exec(statement, args...)
 	if err != nil {
 		return -1, err
@@ -506,6 +520,10 @@ func (orm *Model) Delete(output interface{}) (int64, error) {
 		orm.TableName,
 		orm.QuoteIdentifier,
 		condition)
+	if OnDebug {
+		fmt.Println(statement)
+		fmt.Println(orm)
+	}
 	res, err := orm.Exec(statement)
 	if err != nil {
 		return -1, err
@@ -546,6 +564,10 @@ func (orm *Model) DeleteAll(rowsSlicePtr interface{}) (int64, error) {
 		orm.TableName,
 		orm.QuoteIdentifier,
 		condition)
+	if OnDebug {
+		fmt.Println(statement)
+		fmt.Println(orm)
+	}
 	res, err := orm.Exec(statement)
 	if err != nil {
 		return -1, err
@@ -571,6 +593,10 @@ func (orm *Model) DeleteRow() (int64, error) {
 		orm.TableName,
 		orm.QuoteIdentifier,
 		condition)
+	if OnDebug {
+		fmt.Println(statement)
+		fmt.Println(orm)
+	}
 	res, err := orm.Exec(statement, orm.ParamStr...)
 	if err != nil {
 		return -1, err

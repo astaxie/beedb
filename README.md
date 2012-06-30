@@ -13,6 +13,8 @@ Drivers for Go's sql package which support database/sql includes:
 
 Mysql:[github.com/ziutek/mymysql/godrv](https://github.com/ziutek/mymysql/godrv)`[*]`
 
+Mysql:[code.google.com/p/go-mysql-driver](http://code.google.com/p/go-mysql-driver/ )`[*]`
+
 PostgreSQL:[github.com/bmizerany/pq](https://github.com/bmizerany/pq)`[*]`
 
 SQLite:[github.com/mattn/go-sqlite3](https://github.com/mattn/go-sqlite3)`[*]`
@@ -42,6 +44,10 @@ Open a database link(may be will support ConnectionPool in the future)
 		panic(err)
 	}
 	orm := beedb.New(db)
+	
+Open Debug log, turn on the debug
+  
+    beedb.OnDebug=true
 
 Model a struct after a table in the db
 
@@ -51,6 +57,11 @@ Model a struct after a table in the db
 		Departname	string
 		Created		time.Time
 	}
+
+***Attention***
+The structs Name 'UserInfo' will turn into the table name 'user_info', the same as the keyname.	
+If the keyname is 'UserName' will turn into the select colum 'user_name'	
+	
 
 Create an object and save it
 
