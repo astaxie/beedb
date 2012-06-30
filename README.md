@@ -58,7 +58,7 @@ Model a struct after a table in the db
 		Created		time.Time
 	}
 
-***Attention***
+###***Caution***
 The structs Name 'UserInfo' will turn into the table name 'user_info', the same as the keyname.	
 If the keyname is 'UserName' will turn into the select colum 'user_name'	
 	
