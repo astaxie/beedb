@@ -44,6 +44,10 @@ Open a database link(may be will support ConnectionPool in the future)
 		panic(err)
 	}
 	orm := beedb.New(db)
+
+with PostgreSQL,
+	
+	orm := beedb.New(db, "pg")
 	
 Open Debug log, turn on the debug
   
