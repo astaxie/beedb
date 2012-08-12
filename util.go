@@ -87,8 +87,14 @@ func scanMapIntoStruct(obj interface{}, objMap map[string][]byte) error {
 			v = string(data)
 		case reflect.Bool:
 			v = string(data) == "1"
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32:
 			x, err := strconv.Atoi(string(data))
+			if err != nil {
+				return errors.New("arg " + key + " as int: " + err.Error())
+			}
+			v = x
+		case reflect.Int64:
+			x, err := strconv.ParseInt(string(data), 10, 64)
 			if err != nil {
 				return errors.New("arg " + key + " as int: " + err.Error())
 			}
@@ -127,18 +133,37 @@ func scanStructIntoMap(obj interface{}) (map[string]interface{}, error) {
 
 	dataStructType := dataStruct.Type()
 
-	mapped := make(map[string]interface{})
+	mapped, errs := getreflecttype(dataStructType)
 
-	for i := 0; i < dataStructType.NumField(); i++ {
-		field := dataStructType.Field(i)
-		fieldName := field.Name
-
-		mapKey := snakeCasedName(fieldName)
-		value := dataStruct.FieldByName(fieldName).Interface()
-
-		mapped[mapKey] = value
+	if errs != nil {
+		return nil, errs
 	}
 
+	return mapped, nil
+}
+
+func getreflecttype(t reflect.Type) (map[string]interface{}, error) {
+	mapped := make(map[string]interface{})
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		fieldName := field.Name
+		if field.Type.Kind() == reflect.Struct {
+			tmpmap, err := getreflecttype(field.Type)
+			if err != nil {
+				return nil, err
+			}
+			for k, v := range tmpmap {
+				if _, ok := mapped[k]; !ok {
+					mapped[k] = v
+				}
+			}
+		} else {
+			mapKey := snakeCasedName(fieldName)
+			value := reflect.Indirect(reflect.New(field.Type)).Interface()
+			mapped[mapKey] = value
+		}
+	}
 	return mapped, nil
 }
 
