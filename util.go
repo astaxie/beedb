@@ -133,37 +133,18 @@ func scanStructIntoMap(obj interface{}) (map[string]interface{}, error) {
 
 	dataStructType := dataStruct.Type()
 
-	mapped, errs := getreflecttype(dataStructType)
-
-	if errs != nil {
-		return nil, errs
-	}
-
-	return mapped, nil
-}
-
-func getreflecttype(t reflect.Type) (map[string]interface{}, error) {
 	mapped := make(map[string]interface{})
 
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
+	for i := 0; i < dataStructType.NumField(); i++ {
+		field := dataStructType.Field(i)
 		fieldName := field.Name
-		if field.Type.Kind() == reflect.Struct {
-			tmpmap, err := getreflecttype(field.Type)
-			if err != nil {
-				return nil, err
-			}
-			for k, v := range tmpmap {
-				if _, ok := mapped[k]; !ok {
-					mapped[k] = v
-				}
-			}
-		} else {
-			mapKey := snakeCasedName(fieldName)
-			value := reflect.Indirect(reflect.New(field.Type)).Interface()
-			mapped[mapKey] = value
-		}
+
+		mapKey := snakeCasedName(fieldName)
+		value := dataStruct.FieldByName(fieldName).Interface()
+
+		mapped[mapKey] = value
 	}
+
 	return mapped, nil
 }
 
