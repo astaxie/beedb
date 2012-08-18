@@ -101,7 +101,7 @@ func (orm *Model) ScanPK(output interface{}) *Model {
 		for i := 0; i < sliceElementType.NumField(); i++ {
 			bb := reflect.ValueOf(sliceElementType.Field(i).Tag)
 			if bb.String() == "PK" {
-				orm.PrimaryKey = snakeCasedName(sliceElementType.Field(i).Name)
+				orm.PrimaryKey = sliceElementType.Field(i).Name
 			}
 		}
 	} else {
@@ -109,7 +109,7 @@ func (orm *Model) ScanPK(output interface{}) *Model {
 		for i := 0; i < tt.NumField(); i++ {
 			bb := reflect.ValueOf(tt.Field(i).Tag)
 			if bb.String() == "PK" {
-				orm.PrimaryKey = snakeCasedName(tt.Field(i).Name)
+				orm.PrimaryKey = tt.Field(i).Name
 			}
 		}
 	}
