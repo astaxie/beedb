@@ -50,7 +50,7 @@ func (orm *Model) SetTable(tbname string) *Model {
 }
 
 func (orm *Model) SetPK(pk string) *Model {
-	orm.PrimaryKey = snakeCasedName(pk)
+	orm.PrimaryKey = pk
 	return orm
 }
 
@@ -101,7 +101,7 @@ func (orm *Model) ScanPK(output interface{}) *Model {
 		for i := 0; i < sliceElementType.NumField(); i++ {
 			bb := reflect.ValueOf(sliceElementType.Field(i).Tag)
 			if bb.String() == "PK" {
-				orm.PrimaryKey = snakeCasedName(sliceElementType.Field(i).Name)
+				orm.PrimaryKey = sliceElementType.Field(i).Name
 			}
 		}
 	} else {
@@ -109,7 +109,7 @@ func (orm *Model) ScanPK(output interface{}) *Model {
 		for i := 0; i < tt.NumField(); i++ {
 			bb := reflect.ValueOf(tt.Field(i).Tag)
 			if bb.String() == "PK" {
-				orm.PrimaryKey = snakeCasedName(tt.Field(i).Name)
+				orm.PrimaryKey = tt.Field(i).Name
 			}
 		}
 	}
@@ -360,8 +360,8 @@ func (orm *Model) Save(output interface{}) error {
 	if orm.TableName == "" {
 		orm.TableName = snakeCasedName(StructName(output))
 	}
-	id := results[strings.ToLower(orm.PrimaryKey)]
-	delete(results, strings.ToLower(orm.PrimaryKey))
+	id := results[snakeCasedName(orm.PrimaryKey)]
+	delete(results, snakeCasedName(orm.PrimaryKey))
 	if reflect.ValueOf(id).Int() == 0 {
 		structPtr := reflect.ValueOf(output)
 		structVal := structPtr.Elem()
@@ -425,7 +425,7 @@ func (orm *Model) Insert(properties map[string]interface{}) (int64, error) {
 		fmt.Println(orm)
 	}
 	if orm.ParamIdentifier == "pg" {
-		statement = fmt.Sprintf("%v RETURNING %v", statement, orm.PrimaryKey)
+		statement = fmt.Sprintf("%v RETURNING %v", statement, snakeCasedName(orm.PrimaryKey))
 		var id int64
 		orm.Db.QueryRow(statement, args...).Scan(&id)
 		return id, nil
