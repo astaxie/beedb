@@ -39,28 +39,36 @@ Drivers marked with a `[*]` are tested with beedb
 
 Open a database link(may be will support ConnectionPool in the future)
 
-	db, err := sql.Open("mymysql", "test/xiemengjun/123456")
-	if err != nil {
-		panic(err)
-	}
-	orm := beedb.New(db)
+```go
+db, err := sql.Open("mymysql", "test/xiemengjun/123456")
+if err != nil {
+	panic(err)
+}
+orm := beedb.New(db)
+```
 
 with PostgreSQL,
-	
-	orm := beedb.New(db, "pg")
+
+```go
+orm := beedb.New(db, "pg")
+```
 	
 Open Debug log, turn on the debug
   
-    beedb.OnDebug=true
+```go
+beedb.OnDebug=true
+```
 
 Model a struct after a table in the db
 
-	type Userinfo struct {
-		Uid		int	`PK` //if the table's PrimaryKey is not id ,should add `PK` to ident
-		Username	string
-		Departname	string
-		Created		time.Time
-	}
+```go
+type Userinfo struct {
+	Uid		int	`PK` //if the table's PrimaryKey is not id ,should add `PK` to ident
+	Username	string
+	Departname	string
+	Created		time.Time
+}
+```
 
 ###***Caution***
 The structs Name 'UserInfo' will turn into the table name 'user_info', the same as the keyname.	
@@ -69,102 +77,122 @@ If the keyname is 'UserName' will turn into the select colum 'user_name'
 
 Create an object and save it
 
-	var saveone Userinfo
-	saveone.Username = "Test Add User"
-	saveone.Departname = "Test Add Departname"
-	saveone.Created = time.Now()
-	orm.Save(&saveone)
+```go
+var saveone Userinfo
+saveone.Username = "Test Add User"
+saveone.Departname = "Test Add Departname"
+saveone.Created = time.Now()
+orm.Save(&saveone)
+```
 
 Saving new and existing objects
 
-	saveone.Username = "Update Username"  
-	saveone.Departname = "Update Departname"
-	saveone.Created = time.Now()
-	orm.Save(&saveone)  //now saveone has the primarykey value it will update
+```go
+saveone.Username = "Update Username"  
+saveone.Departname = "Update Departname"
+saveone.Created = time.Now()
+orm.Save(&saveone)  //now saveone has the primarykey value it will update
+```
 
 Fetch a single object
 
-	var user Userinfo
-	orm.Where("uid=?", 27).Find(&user)
+```go
+var user Userinfo
+orm.Where("uid=?", 27).Find(&user)
 
-	var user2 Userinfo
-	orm.Where(3).Find(&user2) // this is shorthand for the version above
+var user2 Userinfo
+orm.Where(3).Find(&user2) // this is shorthand for the version above
 
-	var user3 Userinfo
-	orm.Where("name = ?", "john").Find(&user3) // more complex query
+var user3 Userinfo
+orm.Where("name = ?", "john").Find(&user3) // more complex query
 
-	var user4 Userinfo
-	orm.Where("name = ? and age < ?", "john", 88).Find(&user4) // even more complex
+var user4 Userinfo
+orm.Where("name = ? and age < ?", "john", 88).Find(&user4) // even more complex
+```
 
 Fetch multiple objects
 
-	var allusers []Userinfo
-	err := orm.Where("id > ?", "3").Limit(10,20).FindAll(&allusers) //Get id>3 limit 10 offset 20
+```go
+var allusers []Userinfo
+err := orm.Where("id > ?", "3").Limit(10,20).FindAll(&allusers) //Get id>3 limit 10 offset 20
 
-	var tenusers []Userinfo
-	err := orm.Where("id > ?", "3").Limit(10).FindAll(&tenusers) //Get id>3 limit 10  if omit offset the default is 0
+var tenusers []Userinfo
+err := orm.Where("id > ?", "3").Limit(10).FindAll(&tenusers) //Get id>3 limit 10  if omit offset the default is 0
 
-	var everyone []Userinfo
-	err := orm.FindAll(&everyone)
+var everyone []Userinfo
+err := orm.FindAll(&everyone)
+```
 
 Find result as Map
 
-	//Original SQL Backinfo resultsSlice []map[string][]byte 
-	//default PrimaryKey id
-	a, _ := orm.SetTable("userinfo").SetPK("uid").Where(2).Select("uid,username").FindMap()
+```go
+//Original SQL Backinfo resultsSlice []map[string][]byte 
+//default PrimaryKey id
+a, _ := orm.SetTable("userinfo").SetPK("uid").Where(2).Select("uid,username").FindMap()
+```
 
 Update with Map
 
-	t := make(map[string]interface{})
-	var j interface{}
-	j = "astaxie"
-	t["username"] = j
-	//update one
-	orm.SetTable("userinfo").SetPK("uid").Where(2).Update(t)
+```go
+t := make(map[string]interface{})
+var j interface{}
+j = "astaxie"
+t["username"] = j
+//update one
+orm.SetTable("userinfo").SetPK("uid").Where(2).Update(t)
+```
 
 Update batch with Map
-	orm.SetTable("userinfo").Where("uid>?", 3).Update(t)
-
+```go
+orm.SetTable("userinfo").Where("uid>?", 3).Update(t)
+```
 
 Insert data with Map	
 
-	add := make(map[string]interface{})
-	j = "astaxie"
-	add["username"] = j
-	j = "cloud develop"
-	add["departname"] = j
-	j = "2012-12-02"
-	add["created"] = j
-	orm.SetTable("userinfo").Insert(add)
+```go
+add := make(map[string]interface{})
+j = "astaxie"
+add["username"] = j
+j = "cloud develop"
+add["departname"] = j
+j = "2012-12-02"
+add["created"] = j
+orm.SetTable("userinfo").Insert(add)
+```
 
 Insert batch with map
 
-	addslice := make([]map[string]interface{})
-	add:=make(map[string]interface{})
-	add2:=make(map[string]interface{})
-	j = "astaxie"
-	add["username"] = j
-	j = "cloud develop"
-	add["departname"] = j
-	j = "2012-12-02"
-	add["created"] = j
-	j = "astaxie2"
-	add2["username"] = j
-	j = "cloud develop2"
-	add2["departname"] = j
-	j = "2012-12-02"
-	add2["created"] = j
-	addslice =append(addslice, add, add2)
-	orm.SetTable("userinfo").Insert(addslice)
+```go
+addslice := make([]map[string]interface{})
+add:=make(map[string]interface{})
+add2:=make(map[string]interface{})
+j = "astaxie"
+add["username"] = j
+j = "cloud develop"
+add["departname"] = j
+j = "2012-12-02"
+add["created"] = j
+j = "astaxie2"
+add2["username"] = j
+j = "cloud develop2"
+add2["departname"] = j
+j = "2012-12-02"
+add2["created"] = j
+addslice =append(addslice, add, add2)
+orm.SetTable("userinfo").Insert(addslice)
+```
 
 Join Table
 
-	a, _ := orm.SetTable("userinfo").Join("LEFT", "userdeatail", "userinfo.uid=userdeatail.uid").Where("userinfo.uid=?", 1).Select("userinfo.uid,userinfo.username,userdeatail.profile").FindMap()
-
+```go
+a, _ := orm.SetTable("userinfo").Join("LEFT", "userdeatail", "userinfo.uid=userdeatail.uid").Where("userinfo.uid=?", 1).Select("userinfo.uid,userinfo.username,userdeatail.profile").FindMap()
+```
 
 Group By And Having
 
-	a, _ := orm.SetTable("userinfo").GroupBy("username").Having("username='astaxie'").FindMap()
+```go
+a, _ := orm.SetTable("userinfo").GroupBy("username").Having("username='astaxie'").FindMap()
+```
 
 ## LICENSE
 
