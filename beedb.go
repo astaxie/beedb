@@ -230,9 +230,8 @@ func (orm *Model) FindMap() (resultsSlice []map[string][]byte, err error) {
 		}
 		for ii, key := range fields {
 			rawValue := reflect.Indirect(reflect.ValueOf(scanResultContainers[ii]))
-			//if row is null then return nil
+			//if row is null then ignore
 			if rawValue.Interface() == nil {
-				result[key] = []byte("")
 				continue
 			}
 			aa := reflect.TypeOf(rawValue.Interface())
