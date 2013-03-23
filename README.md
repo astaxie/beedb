@@ -73,6 +73,10 @@ type Userinfo struct {
 ###***Caution***
 The structs Name 'UserInfo' will turn into the table name 'user_info', the same as the keyname.	
 If the keyname is 'UserName' will turn into the select colum 'user_name'	
+If you want table names to be pluralized so that 'UserInfo' struct was treated as 'user_infos' table, just set following option:
+```go
+beedb.PluralizeTableNames=true
+```
 	
 
 Create an object and save it
