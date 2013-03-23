@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/grsmv/inflect"
 )
 
 func getTypeName(obj interface{}) (typestr string) {
@@ -156,6 +157,9 @@ func StructName(s interface{}) string {
 	return v.Name()
 }
 
-func getTableName(obj interface{}) string {
-	return snakeCasedName(getTypeName(obj))
+func getTableName(name string) string {
+	if (PluralizeTableNames) {
+		return inflect.Pluralize(snakeCasedName(name))
+	}
+	return snakeCasedName(name)
 }
