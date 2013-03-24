@@ -11,6 +11,7 @@ import (
 )
 
 var OnDebug = false
+var PluralizeTableNames = false
 
 type Model struct {
 	Db              *sql.DB
@@ -143,7 +144,7 @@ func (orm *Model) Find(output interface{}) error {
 	var keys []string
 	results, _ := scanStructIntoMap(output)
 	if orm.TableName == "" {
-		orm.TableName = snakeCasedName(StructName(output))
+		orm.TableName = getTableName(StructName(output))
 	}
 	for key, _ := range results {
 		keys = append(keys, key)
@@ -177,7 +178,7 @@ func (orm *Model) FindAll(rowsSlicePtr interface{}) error {
 	var keys []string
 	results, _ := scanStructIntoMap(st.Interface())
 	if orm.TableName == "" {
-		orm.TableName = getTableName(rowsSlicePtr)
+		orm.TableName = getTableName(getTypeName(rowsSlicePtr))
 	}
 	for key, _ := range results {
 		keys = append(keys, key)
@@ -357,7 +358,7 @@ func (orm *Model) Save(output interface{}) error {
 	orm.ScanPK(output)
 	results, _ := scanStructIntoMap(output)
 	if orm.TableName == "" {
-		orm.TableName = snakeCasedName(StructName(output))
+		orm.TableName = getTableName(StructName(output))
 	}
 	id := results[snakeCasedName(orm.PrimaryKey)]
 	delete(results, snakeCasedName(orm.PrimaryKey))
@@ -515,7 +516,7 @@ func (orm *Model) Delete(output interface{}) (int64, error) {
 	orm.ScanPK(output)
 	results, _ := scanStructIntoMap(output)
 	if orm.TableName == "" {
-		orm.TableName = snakeCasedName(StructName(output))
+		orm.TableName = getTableName(StructName(output))
 	}
 	id := results[strings.ToLower(orm.PrimaryKey)]
 	condition := fmt.Sprintf("%v%v%v='%v'", orm.QuoteIdentifier, strings.ToLower(orm.PrimaryKey), orm.QuoteIdentifier, id)
@@ -544,7 +545,7 @@ func (orm *Model) DeleteAll(rowsSlicePtr interface{}) (int64, error) {
 	defer orm.InitModel()
 	orm.ScanPK(rowsSlicePtr)
 	if orm.TableName == "" {
-		orm.TableName = getTableName(rowsSlicePtr)
+		orm.TableName = getTableName(getTypeName(rowsSlicePtr))
 	}
 	var ids []string
 	val := reflect.Indirect(reflect.ValueOf(rowsSlicePtr))
