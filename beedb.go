@@ -142,7 +142,11 @@ func (orm *Model) Having(conditions string) *Model {
 func (orm *Model) Find(output interface{}) error {
 	orm.ScanPK(output)
 	var keys []string
-	results, _ := scanStructIntoMap(output)
+	results, err := scanStructIntoMap(output)
+	if err != nil {
+		return err
+	}
+
 	if orm.TableName == "" {
 		orm.TableName = getTableName(StructName(output))
 	}
@@ -176,7 +180,11 @@ func (orm *Model) FindAll(rowsSlicePtr interface{}) error {
 	sliceElementType := sliceValue.Type().Elem()
 	st := reflect.New(sliceElementType)
 	var keys []string
-	results, _ := scanStructIntoMap(st.Interface())
+	results, err := scanStructIntoMap(st.Interface())
+	if err != nil {
+		return err
+	}
+
 	if orm.TableName == "" {
 		orm.TableName = getTableName(getTypeName(rowsSlicePtr))
 	}
@@ -356,7 +364,11 @@ func (orm *Model) Exec(finalQueryString string, args ...interface{}) (sql.Result
 //if the struct has PrimaryKey == 0 insert else update
 func (orm *Model) Save(output interface{}) error {
 	orm.ScanPK(output)
-	results, _ := scanStructIntoMap(output)
+	results, err := scanStructIntoMap(output)
+	if err != nil {
+		return err
+	}
+
 	if orm.TableName == "" {
 		orm.TableName = getTableName(StructName(output))
 	}
@@ -454,7 +466,11 @@ func (orm *Model) InsertBatch(rows []map[string]interface{}) ([]int64, error) {
 	}
 	for i := 0; i < len(rows); i++ {
 		orm.TableName = tablename
-		id, _ := orm.Insert(rows[i])
+		id, err := orm.Insert(rows[i])
+		if err != nil {
+			return ids, err
+		}
+
 		ids = append(ids, id)
 	}
 	return ids, nil
@@ -514,7 +530,11 @@ func (orm *Model) Update(properties map[string]interface{}) (int64, error) {
 func (orm *Model) Delete(output interface{}) (int64, error) {
 	defer orm.InitModel()
 	orm.ScanPK(output)
-	results, _ := scanStructIntoMap(output)
+	results, err := scanStructIntoMap(output)
+	if err != nil {
+		return 0, err
+	}
+
 	if orm.TableName == "" {
 		orm.TableName = getTableName(StructName(output))
 	}
@@ -553,7 +573,11 @@ func (orm *Model) DeleteAll(rowsSlicePtr interface{}) (int64, error) {
 		return 0, nil
 	}
 	for i := 0; i < val.Len(); i++ {
-		results, _ := scanStructIntoMap(val.Index(i).Interface())
+		results, err := scanStructIntoMap(val.Index(i).Interface())
+		if err != nil {
+			return 0, err
+		}
+
 		id := results[strings.ToLower(orm.PrimaryKey)]
 		switch id.(type) {
 		case string:
