@@ -160,12 +160,15 @@ func (orm *Model) Find(output interface{}) error {
 		return err
 	}
 	if len(resultsSlice) == 0 {
-		return nil
+		return errors.New("No record found")
 	} else if len(resultsSlice) == 1 {
 		results := resultsSlice[0]
-		scanMapIntoStruct(output, results)
+		err := scanMapIntoStruct(output, results)
+		if err != nil {
+			return err
+		}
 	} else {
-		return errors.New("More Then One Records")
+		return errors.New("More than one record")
 	}
 	return nil
 }
@@ -200,7 +203,10 @@ func (orm *Model) FindAll(rowsSlicePtr interface{}) error {
 
 	for _, results := range resultsSlice {
 		newValue := reflect.New(sliceElementType)
-		scanMapIntoStruct(newValue.Interface(), results)
+		err := scanMapIntoStruct(newValue.Interface(), results)
+		if err != nil {
+			return err
+		}
 		sliceValue.Set(reflect.Append(sliceValue, reflect.Indirect(reflect.ValueOf(newValue.Interface()))))
 	}
 	return nil

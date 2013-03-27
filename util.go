@@ -2,11 +2,11 @@ package beedb
 
 import (
 	"errors"
+	"github.com/grsmv/inflect"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
-	"github.com/grsmv/inflect"
 )
 
 func getTypeName(obj interface{}) (typestr string) {
@@ -114,6 +114,9 @@ func scanMapIntoStruct(obj interface{}, objMap map[string][]byte) error {
 			v = x
 		//Now only support Time type
 		case reflect.Struct:
+			if structField.Type().String() != "time.Time" {
+				return errors.New("unsupported struct type in Scan: " + structField.Type().String())
+			}
 			x, _ := time.Parse("2006-01-02 15:04:05.000 -0700", string(data))
 			v = x
 		default:
@@ -158,7 +161,7 @@ func StructName(s interface{}) string {
 }
 
 func getTableName(name string) string {
-	if (PluralizeTableNames) {
+	if PluralizeTableNames {
 		return inflect.Pluralize(snakeCasedName(name))
 	}
 	return snakeCasedName(name)
