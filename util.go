@@ -117,7 +117,16 @@ func scanMapIntoStruct(obj interface{}, objMap map[string][]byte) error {
 			if structField.Type().String() != "time.Time" {
 				return errors.New("unsupported struct type in Scan: " + structField.Type().String())
 			}
-			x, _ := time.Parse("2006-01-02 15:04:05.000 -0700", string(data))
+
+			x, err := time.Parse("2006-01-02 15:04:05", string(data))
+			if err != nil {
+				x, err = time.Parse("2006-01-02 15:04:05.000 -0700", string(data))
+
+				if err != nil {
+					return errors.New("unsupported time format: " + string(data))
+				}
+			}
+
 			v = x
 		default:
 			return errors.New("unsupported type in Scan: " + reflect.TypeOf(v).String())
