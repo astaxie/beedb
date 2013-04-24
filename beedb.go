@@ -121,7 +121,7 @@ func (orm *Model) ScanPK(output interface{}) *Model {
 //The join_operator should be one of INNER, LEFT OUTER, CROSS etc - this will be prepended to JOIN
 func (orm *Model) Join(join_operator, tablename, condition string) *Model {
 	if orm.JoinStr != "" {
-		orm.JoinStr = orm.JoinStr + fmt.Sprintf("%v JOIN %v ON %v", join_operator, tablename, condition)
+		orm.JoinStr = orm.JoinStr + fmt.Sprintf(" %v JOIN %v ON %v", join_operator, tablename, condition)
 	} else {
 		orm.JoinStr = fmt.Sprintf("%v JOIN %v ON %v", join_operator, tablename, condition)
 	}
