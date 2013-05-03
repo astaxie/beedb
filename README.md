@@ -63,7 +63,7 @@ Model a struct after a table in the db
 
 ```go
 type Userinfo struct {
-	Uid		int	`PK` //if the table's PrimaryKey is not id ,should add `PK` to ident
+	Uid		int	`beedb:"PK"` //if the table's PrimaryKey is not "Id", use this tag
 	Username	string
 	Departname	string
 	Created		time.Time

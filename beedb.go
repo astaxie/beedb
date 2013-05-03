@@ -100,16 +100,16 @@ func (orm *Model) ScanPK(output interface{}) *Model {
 		sliceValue := reflect.Indirect(reflect.ValueOf(output))
 		sliceElementType := sliceValue.Type().Elem()
 		for i := 0; i < sliceElementType.NumField(); i++ {
-			bb := reflect.ValueOf(sliceElementType.Field(i).Tag)
-			if bb.String() == "PK" {
+			bb := sliceElementType.Field(i).Tag
+			if bb.Get("beedb") == "PK" || reflect.ValueOf(bb).String() == "PK" {
 				orm.PrimaryKey = sliceElementType.Field(i).Name
 			}
 		}
 	} else {
 		tt := reflect.TypeOf(reflect.Indirect(reflect.ValueOf(output)).Interface())
 		for i := 0; i < tt.NumField(); i++ {
-			bb := reflect.ValueOf(tt.Field(i).Tag)
-			if bb.String() == "PK" {
+			bb := tt.Field(i).Tag
+			if bb.Get("beedb") == "PK" || reflect.ValueOf(bb).String() == "PK" {
 				orm.PrimaryKey = tt.Field(i).Name
 			}
 		}

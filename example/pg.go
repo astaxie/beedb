@@ -31,7 +31,7 @@ WITH(OIDS=FALSE);
 var orm beedb.Model
 
 type Userinfo struct {
-	Uid        int `PK`
+	Uid        int `beedb:"PK"`
 	Username   string
 	Departname string
 	Created    string
