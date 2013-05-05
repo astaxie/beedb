@@ -28,7 +28,7 @@ CREATE TABLE `userdeatail` (
 var orm beedb.Model
 
 type Userinfo struct {
-	Uid        int `PK`
+	Uid        int `beedb:"PK"`
 	Username   string
 	Departname string
 	Created    time.Time
