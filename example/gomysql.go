@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "code.google.com/p/go-mysql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql"
 	"database/sql"
 	"fmt"
 	"github.com/astaxie/beedb"
