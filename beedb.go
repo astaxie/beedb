@@ -274,8 +274,13 @@ func (orm *Model) FindMap() (resultsSlice []map[string][]byte, err error) {
 			case reflect.Struct:
 				str = rawValue.Interface().(time.Time).Format("2006-01-02 15:04:05.000 -0700")
 				result[key] = []byte(str)
+			case reflect.Bool:
+				if (vv.Bool()) {
+				  result[key] = []byte("1")
+				} else {
+				  result[key] = []byte("0")
+				}
 			}
-
 		}
 		resultsSlice = append(resultsSlice, result)
 	}
