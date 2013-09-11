@@ -61,6 +61,9 @@ func titleCasedName(name string) string {
 }
 
 func pluralizeString(str string) string {
+	if strings.HasSuffix(str, "data") {
+		return str
+	}
 	if strings.HasSuffix(str, "y") {
 		str = str[:len(str)-1] + "ie"
 	}
@@ -151,7 +154,10 @@ func scanStructIntoMap(obj interface{}) (map[string]interface{}, error) {
 	for i := 0; i < dataStructType.NumField(); i++ {
 		field := dataStructType.Field(i)
 		fieldName := field.Name
-
+		bb := field.Tag
+		if bb.Get("beedb") == "-" || reflect.ValueOf(bb).String() == "-" {
+			continue
+		}
 		mapKey := snakeCasedName(fieldName)
 		value := dataStruct.FieldByName(fieldName).Interface()
 
