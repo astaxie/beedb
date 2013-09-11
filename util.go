@@ -61,9 +61,9 @@ func titleCasedName(name string) string {
 }
 
 func pluralizeString(str string) string {
-  if strings.HasSuffix(str, "data") {
-    return str
-  }
+	if strings.HasSuffix(str, "data") {
+		return str
+	}
 	if strings.HasSuffix(str, "y") {
 		str = str[:len(str)-1] + "ie"
 	}
