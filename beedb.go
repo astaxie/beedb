@@ -191,11 +191,13 @@ func (orm *Model) FindAll(rowsSlicePtr interface{}) error {
 	if orm.TableName == "" {
 		orm.TableName = getTableName(getTypeName(rowsSlicePtr))
 	}
-	for key, _ := range results {
-		keys = append(keys, key)
+	// If we've already specific columns with Select(), use that
+	if orm.ColumnStr == "*" {
+		for key, _ := range results {
+			keys = append(keys, key)
+		}
+		orm.ColumnStr = strings.Join(keys, ", ")
 	}
-	orm.ColumnStr = strings.Join(keys, ", ")
-
 	resultsSlice, err := orm.FindMap()
 	if err != nil {
 		return err
