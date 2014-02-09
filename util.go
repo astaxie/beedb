@@ -2,7 +2,6 @@ package beedb
 
 import (
 	"errors"
-	"github.com/grsmv/inflect"
 	"reflect"
 	"strconv"
 	"strings"
@@ -155,10 +154,20 @@ func scanStructIntoMap(obj interface{}) (map[string]interface{}, error) {
 		field := dataStructType.Field(i)
 		fieldName := field.Name
 		bb := field.Tag
-		if bb.Get("beedb") == "-" || reflect.ValueOf(bb).String() == "-" {
+		sqlTag := bb.Get("sql")
+		var mapKey string
+		if bb.Get("beedb") == "-" || sqlTag == "-" || reflect.ValueOf(bb).String() == "-" {
 			continue
+		} else if len(sqlTag) > 0 {
+			sqtags := strings.Split(sqlTag, ",")
+			//TODO: support tags that are common in json like omitempty
+			if sqtags[0] == "-" || sqtags[0] == "" {
+				continue
+			}
+			mapKey = sqtags[0]
+		} else {
+			mapKey = snakeCasedName(fieldName)
 		}
-		mapKey := snakeCasedName(fieldName)
 		value := dataStruct.FieldByName(fieldName).Interface()
 
 		mapped[mapKey] = value
@@ -175,9 +184,38 @@ func StructName(s interface{}) string {
 	return v.Name()
 }
 
-func getTableName(name string) string {
-	if PluralizeTableNames {
-		return inflect.Pluralize(snakeCasedName(name))
+func getTableName(s interface{}) string {
+	v := reflect.TypeOf(s)
+	if v.Kind() == reflect.String {
+		s2, _ := s.(string)
+		return snakeCasedName(s2)
 	}
-	return snakeCasedName(name)
+	tn := scanTableName(s)
+	if len(tn) > 0 {
+		return tn
+	}
+	return getTableName(StructName(s))
+}
+
+func scanTableName(s interface{}) string {
+	if reflect.TypeOf(reflect.Indirect(reflect.ValueOf(s)).Interface()).Kind() == reflect.Slice {
+		sliceValue := reflect.Indirect(reflect.ValueOf(s))
+		sliceElementType := sliceValue.Type().Elem()
+		for i := 0; i < sliceElementType.NumField(); i++ {
+			bb := sliceElementType.Field(i).Tag
+			if len(bb.Get("tname")) > 0 {
+				return bb.Get("tname")
+			}
+		}
+	} else {
+		tt := reflect.TypeOf(reflect.Indirect(reflect.ValueOf(s)).Interface())
+		for i := 0; i < tt.NumField(); i++ {
+			bb := tt.Field(i).Tag
+			if len(bb.Get("tname")) > 0 {
+				return bb.Get("tname")
+			}
+		}
+	}
+	return ""
+
 }

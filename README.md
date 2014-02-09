@@ -63,20 +63,16 @@ Model a struct after a table in the db
 
 ```go
 type Userinfo struct {
-	Uid		int	`beedb:"PK"` //if the table's PrimaryKey is not "Id", use this tag
-	Username	string
-	Departname	string
-	Created		time.Time
+	Uid		int	`beedb:"PK" slq:"UID" tname:"USER_INFO"` //if the table's PrimaryKey is not "Id", use this tag
+	Username	string `slq:"USERNAME"`
+	Departname	string `slq:"DEPARTNAME"`
+	Created		time.Time `slq:"CREATED"`
 }
 ```
 
 ###***Caution***
-The structs Name 'UserInfo' will turn into the table name 'user_info', the same as the keyname.	
-If the keyname is 'UserName' will turn into the select colum 'user_name'	
-If you want table names to be pluralized so that 'UserInfo' struct was treated as 'user_infos' table, just set following option:
-```go
-beedb.PluralizeTableNames=true
-```
+The structs Name 'UserInfo' will turn into the table name 'USER_INFO', as defined by the **tname** tag.	
+If the key 'UserName' will turn into the select colum 'USERNAME' because of the **sql** tag.
 	
 
 Create an object and save it

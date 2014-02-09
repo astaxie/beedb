@@ -32,7 +32,7 @@ type Model struct {
 }
 
 /**
- * Add New sql.DB in the future i will add ConnectionPool.Get() 
+ * Add New sql.DB in the future i will add ConnectionPool.Get()
  */
 func New(db *sql.DB, options ...interface{}) (m Model) {
 	if len(options) == 0 {
@@ -148,7 +148,7 @@ func (orm *Model) Find(output interface{}) error {
 	}
 
 	if orm.TableName == "" {
-		orm.TableName = getTableName(StructName(output))
+		orm.TableName = getTableName(output)
 	}
 	// If we've already specific columns with Select(), use that
 	if orm.ColumnStr == "*" {
@@ -275,15 +275,15 @@ func (orm *Model) FindMap() (resultsSlice []map[string][]byte, err error) {
 			case reflect.String:
 				str = vv.String()
 				result[key] = []byte(str)
-			//时间类型	
+			//时间类型
 			case reflect.Struct:
 				str = rawValue.Interface().(time.Time).Format("2006-01-02 15:04:05.000 -0700")
 				result[key] = []byte(str)
 			case reflect.Bool:
-				if (vv.Bool()) {
-				  result[key] = []byte("1")
+				if vv.Bool() {
+					result[key] = []byte("1")
 				} else {
-				  result[key] = []byte("0")
+					result[key] = []byte("0")
 				}
 			}
 		}
@@ -386,10 +386,10 @@ func (orm *Model) Save(output interface{}) error {
 	}
 
 	if orm.TableName == "" {
-		orm.TableName = getTableName(StructName(output))
+		orm.TableName = getTableName(output)
 	}
-	id := results[snakeCasedName(orm.PrimaryKey)]
-	delete(results, snakeCasedName(orm.PrimaryKey))
+	id := results[orm.PrimaryKey]
+	delete(results, orm.PrimaryKey)
 	if reflect.ValueOf(id).Int() == 0 {
 		structPtr := reflect.ValueOf(output)
 		structVal := structPtr.Elem()
@@ -552,7 +552,7 @@ func (orm *Model) Delete(output interface{}) (int64, error) {
 	}
 
 	if orm.TableName == "" {
-		orm.TableName = getTableName(StructName(output))
+		orm.TableName = getTableName(output)
 	}
 	id := results[strings.ToLower(orm.PrimaryKey)]
 	condition := fmt.Sprintf("%v%v%v='%v'", orm.QuoteIdentifier, strings.ToLower(orm.PrimaryKey), orm.QuoteIdentifier, id)
@@ -581,6 +581,7 @@ func (orm *Model) DeleteAll(rowsSlicePtr interface{}) (int64, error) {
 	defer orm.InitModel()
 	orm.ScanPK(rowsSlicePtr)
 	if orm.TableName == "" {
+		//TODO: fix table name
 		orm.TableName = getTableName(getTypeName(rowsSlicePtr))
 	}
 	var ids []string
