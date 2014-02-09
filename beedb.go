@@ -387,10 +387,9 @@ func (orm *Model) Save(output interface{}) error {
 
 	if orm.TableName == "" {
 		orm.TableName = getTableName(output)
-		fmt.Println("TABLE NAME IS: " + orm.TableName)
 	}
-	id := results[snakeCasedName(orm.PrimaryKey)]
-	delete(results, snakeCasedName(orm.PrimaryKey))
+	id := results[orm.PrimaryKey]
+	delete(results, orm.PrimaryKey)
 	if reflect.ValueOf(id).Int() == 0 {
 		structPtr := reflect.ValueOf(output)
 		structVal := structPtr.Elem()

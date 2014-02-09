@@ -2,8 +2,6 @@ package beedb
 
 import (
 	"errors"
-	"fmt"
-	"github.com/grsmv/inflect"
 	"reflect"
 	"strconv"
 	"strings"
@@ -190,9 +188,6 @@ func getTableName(s interface{}) string {
 	v := reflect.TypeOf(s)
 	if v.Kind() == reflect.String {
 		s2, _ := s.(string)
-		if PluralizeTableNames {
-			return inflect.Pluralize(snakeCasedName(s2))
-		}
 		return snakeCasedName(s2)
 	}
 	tn := scanTableName(s)
@@ -208,7 +203,6 @@ func scanTableName(s interface{}) string {
 		sliceElementType := sliceValue.Type().Elem()
 		for i := 0; i < sliceElementType.NumField(); i++ {
 			bb := sliceElementType.Field(i).Tag
-			fmt.Println("TNAME: " + bb.Get("tname"))
 			if len(bb.Get("tname")) > 0 {
 				return bb.Get("tname")
 			}
@@ -217,7 +211,6 @@ func scanTableName(s interface{}) string {
 		tt := reflect.TypeOf(reflect.Indirect(reflect.ValueOf(s)).Interface())
 		for i := 0; i < tt.NumField(); i++ {
 			bb := tt.Field(i).Tag
-			fmt.Println("TNAME: " + bb.Get("tname"))
 			if len(bb.Get("tname")) > 0 {
 				return bb.Get("tname")
 			}
@@ -226,10 +219,3 @@ func scanTableName(s interface{}) string {
 	return ""
 
 }
-
-/*func getTableName(name string) string {
-	if PluralizeTableNames {
-		return inflect.Pluralize(snakeCasedName(name))
-	}
-	return snakeCasedName(name)
-}*/
