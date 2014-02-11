@@ -390,6 +390,11 @@ func (orm *Model) Save(output interface{}) error {
 	}
 	id := results[orm.PrimaryKey]
 	delete(results, orm.PrimaryKey)
+
+	if id == nil {
+		return fmt.Errorf("Unable to save because primary key %q was not found in struct", orm.PrimaryKey)
+	}
+
 	if reflect.ValueOf(id).Int() == 0 {
 		structPtr := reflect.ValueOf(output)
 		structVal := structPtr.Elem()
