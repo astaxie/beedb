@@ -75,67 +75,119 @@ func scanMapIntoStruct(obj interface{}, objMap map[string][]byte) error {
 		return errors.New("expected a pointer to a struct")
 	}
 
-	for key, data := range objMap {
-		structField := dataStruct.FieldByName(titleCasedName(key))
-		if !structField.CanSet() {
-			continue
+	dataStructType := dataStruct.Type()
+
+	for i := 0; i < dataStructType.NumField(); i++ {
+		field := dataStructType.Field(i)
+		fieldv := dataStruct.Field(i)
+
+		err := scanMapElement(fieldv, field, objMap)
+		if err != nil {
+			return err
 		}
+	}
 
-		var v interface{}
+	return nil
+}
 
-		switch structField.Type().Kind() {
-		case reflect.Slice:
-			v = data
-		case reflect.String:
-			v = string(data)
-		case reflect.Bool:
-			v = string(data) == "1"
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32:
-			x, err := strconv.Atoi(string(data))
-			if err != nil {
-				return errors.New("arg " + key + " as int: " + err.Error())
-			}
-			v = x
-		case reflect.Int64:
-			x, err := strconv.ParseInt(string(data), 10, 64)
-			if err != nil {
-				return errors.New("arg " + key + " as int: " + err.Error())
-			}
-			v = x
-		case reflect.Float32, reflect.Float64:
-			x, err := strconv.ParseFloat(string(data), 64)
-			if err != nil {
-				return errors.New("arg " + key + " as float64: " + err.Error())
-			}
-			v = x
-		case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			x, err := strconv.ParseUint(string(data), 10, 64)
-			if err != nil {
-				return errors.New("arg " + key + " as int: " + err.Error())
-			}
-			v = x
-		//Now only support Time type
-		case reflect.Struct:
-			if structField.Type().String() != "time.Time" {
-				return errors.New("unsupported struct type in Scan: " + structField.Type().String())
-			}
+func scanMapElement(fieldv reflect.Value, field reflect.StructField, objMap map[string][]byte) error {
 
-			x, err := time.Parse("2006-01-02 15:04:05", string(data))
-			if err != nil {
-				x, err = time.Parse("2006-01-02 15:04:05.000 -0700", string(data))
+	objFieldName := field.Name
+	bb := field.Tag
+	sqlTag := bb.Get("sql")
 
+	if bb.Get("beedb") == "-" || sqlTag == "-" || reflect.ValueOf(bb).String() == "-" {
+		return nil
+	}
+	sqlTags := strings.Split(sqlTag, ",")
+	sqlFieldName := objFieldName
+	if len(sqlTags[0]) > 0 {
+		sqlFieldName = sqlTags[0]
+	}
+	inline := false
+	//omitempty := false //TODO!
+	// CHECK INLINE
+	if len(sqlTags) > 1 {
+		if stringArrayContains("inline", sqlTags[1:]) {
+			inline = true
+		}
+	}
+	if inline {
+		if field.Type.Kind() == reflect.Struct && field.Type.String() != "time.Time" {
+			for i := 0; i < field.Type.NumField(); i++ {
+				err := scanMapElement(fieldv.Field(i), field.Type.Field(i), objMap)
 				if err != nil {
-					return errors.New("unsupported time format: " + string(data))
+					return err
 				}
 			}
+		} else {
+			return errors.New("A non struct type can't be inline.")
+		}
+	}
 
-			v = x
-		default:
-			return errors.New("unsupported type in Scan: " + reflect.TypeOf(v).String())
+	// not inline
+
+	data, ok := objMap[sqlFieldName]
+
+	if !ok {
+		return nil
+	}
+
+	var v interface{}
+
+	switch field.Type.Kind() {
+
+	case reflect.Slice:
+		v = data
+	case reflect.String:
+		v = string(data)
+	case reflect.Bool:
+		v = string(data) == "1"
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32:
+		x, err := strconv.Atoi(string(data))
+		if err != nil {
+			return errors.New("arg " + sqlFieldName + " as int: " + err.Error())
+		}
+		v = x
+	case reflect.Int64:
+		x, err := strconv.ParseInt(string(data), 10, 64)
+		if err != nil {
+			return errors.New("arg " + sqlFieldName + " as int: " + err.Error())
+		}
+		v = x
+	case reflect.Float32, reflect.Float64:
+		x, err := strconv.ParseFloat(string(data), 64)
+		if err != nil {
+			return errors.New("arg " + sqlFieldName + " as float64: " + err.Error())
+		}
+		v = x
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		x, err := strconv.ParseUint(string(data), 10, 64)
+		if err != nil {
+			return errors.New("arg " + sqlFieldName + " as int: " + err.Error())
+		}
+		v = x
+	//Supports Time type only (for now)
+	case reflect.Struct:
+		if fieldv.Type().String() != "time.Time" {
+			return errors.New("unsupported struct type in Scan: " + fieldv.Type().String())
 		}
 
-		structField.Set(reflect.ValueOf(v))
+		x, err := time.Parse("2006-01-02 15:04:05", string(data))
+		if err != nil {
+			x, err = time.Parse("2006-01-02 15:04:05.000 -0700", string(data))
+
+			if err != nil {
+				return errors.New("unsupported time format: " + string(data))
+			}
+		}
+
+		v = x
+	default:
+		return errors.New("unsupported type in Scan: " + reflect.TypeOf(v).String())
 	}
+
+	fieldv.Set(reflect.ValueOf(v))
 
 	return nil
 }
@@ -152,25 +204,46 @@ func scanStructIntoMap(obj interface{}) (map[string]interface{}, error) {
 
 	for i := 0; i < dataStructType.NumField(); i++ {
 		field := dataStructType.Field(i)
+		fieldv := dataStruct.Field(i)
 		fieldName := field.Name
 		bb := field.Tag
 		sqlTag := bb.Get("sql")
+		sqlTags := strings.Split(sqlTag, ",")
 		var mapKey string
+
+		inline := false
+
 		if bb.Get("beedb") == "-" || sqlTag == "-" || reflect.ValueOf(bb).String() == "-" {
 			continue
 		} else if len(sqlTag) > 0 {
-			sqtags := strings.Split(sqlTag, ",")
 			//TODO: support tags that are common in json like omitempty
-			if sqtags[0] == "-" || sqtags[0] == "" {
+			if sqlTags[0] == "-" {
 				continue
 			}
-			mapKey = sqtags[0]
+			mapKey = sqlTags[0]
 		} else {
-			mapKey = snakeCasedName(fieldName)
+			mapKey = fieldName
 		}
-		value := dataStruct.FieldByName(fieldName).Interface()
 
-		mapped[mapKey] = value
+		if len(sqlTags) > 1 {
+			if stringArrayContains("inline", sqlTags[1:]) {
+				inline = true
+			}
+		}
+
+		if inline {
+			// get an inner map and then put it inside the outer map
+			map2, err2 := scanStructIntoMap(fieldv.Interface())
+			if err2 != nil {
+				return mapped, err2
+			}
+			for k, v := range map2 {
+				mapped[k] = v
+			}
+		} else {
+			value := dataStruct.FieldByName(fieldName).Interface()
+			mapped[mapKey] = value
+		}
 	}
 
 	return mapped, nil
@@ -218,4 +291,13 @@ func scanTableName(s interface{}) string {
 	}
 	return ""
 
+}
+
+func stringArrayContains(needle string, haystack []string) bool {
+	for _, v := range haystack {
+		if needle == v {
+			return true
+		}
+	}
+	return false
 }
