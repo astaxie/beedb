@@ -354,7 +354,7 @@ func (orm *Model) generateSql() (a string) {
 			a = fmt.Sprintf("%v ORDER BY %v", a, orm.OrderStr)
 		}
 		if orm.OffsetStr > 0 {
-			a = fmt.Sprintf("%v LIMIT %v, %v", a, orm.OffsetStr, orm.LimitStr)
+			a = fmt.Sprintf("%v LIMIT %v OFFSET %v", a, orm.LimitStr, orm.OffsetStr)
 		} else if orm.LimitStr > 0 {
 			a = fmt.Sprintf("%v LIMIT %v", a, orm.LimitStr)
 		}
