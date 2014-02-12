@@ -194,6 +194,23 @@ Group By And Having
 a, _ := orm.SetTable("userinfo").GroupBy("username").Having("username='astaxie'").FindMap()
 ```
 
+Nesting Models (inline)
+
+```go
+type SQLModel struct {
+	Id       int       `beedb:"PK" sql:"id"`
+	Created  time.Time `sql:"created"`
+	Modified time.Time `sql:"modified"`
+}
+type User struct {
+	SQLModel `sql:",inline"`
+	Name     string `sql:"name" tname:"fn_group"`
+	Auth     int    `sql:"auth"`
+}
+// the SQL table has the columns: id, name, auth, created, modified
+// They are marshalled and unmarshalled automatically because of the inline keyword
+```
+
 ## LICENSE
 
  BSD License
