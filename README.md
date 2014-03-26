@@ -63,10 +63,10 @@ Model a struct after a table in the db
 
 ```go
 type Userinfo struct {
-	Uid		int	`beedb:"PK" slq:"UID" tname:"USER_INFO"` //if the table's PrimaryKey is not "Id", use this tag
-	Username	string `slq:"USERNAME"`
-	Departname	string `slq:"DEPARTNAME"`
-	Created		time.Time `slq:"CREATED"`
+	Uid		int	`beedb:"PK" sql:"UID" tname:"USER_INFO"` //if the table's PrimaryKey is not "Id", use this tag
+	Username	string `sql:"USERNAME"`
+	Departname	string `sql:"DEPARTNAME"`
+	Created		time.Time `sql:"CREATED"`
 }
 ```
 
