@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"log"
 )
 
 var OnDebug = false
@@ -38,7 +39,7 @@ func New(db *sql.DB, options ...interface{}) (m Model) {
 	if len(options) == 0 {
 		m = Model{Db: db, ColumnStr: "*", PrimaryKey: "Id", QuoteIdentifier: "`", ParamIdentifier: "?", ParamIteration: 1}
 	} else if options[0] == "pg" {
-		m = Model{Db: db, ColumnStr: "id", PrimaryKey: "Id", QuoteIdentifier: "\"", ParamIdentifier: options[0].(string), ParamIteration: 1}
+		m = Model{Db: db, ColumnStr: "*", PrimaryKey: "Id", QuoteIdentifier: "\"", ParamIdentifier: options[0].(string), ParamIteration: 1}
 	} else if options[0] == "mssql" {
 		m = Model{Db: db, ColumnStr: "id", PrimaryKey: "id", QuoteIdentifier: "", ParamIdentifier: options[0].(string), ParamIteration: 1}
 	}
@@ -166,6 +167,7 @@ func (orm *Model) Find(output interface{}) error {
 		return errors.New("No record found")
 	} else if len(resultsSlice) == 1 {
 		results := resultsSlice[0]
+		log.Println(results)
 		err := scanMapIntoStruct(output, results)
 		if err != nil {
 			return err
