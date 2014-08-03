@@ -38,7 +38,7 @@ func New(db *sql.DB, options ...interface{}) (m Model) {
 	if len(options) == 0 {
 		m = Model{Db: db, ColumnStr: "*", PrimaryKey: "Id", QuoteIdentifier: "`", ParamIdentifier: "?", ParamIteration: 1}
 	} else if options[0] == "pg" {
-		m = Model{Db: db, ColumnStr: "id", PrimaryKey: "Id", QuoteIdentifier: "\"", ParamIdentifier: options[0].(string), ParamIteration: 1}
+		m = Model{Db: db, ColumnStr: "*", PrimaryKey: "Id", QuoteIdentifier: "\"", ParamIdentifier: options[0].(string), ParamIteration: 1}
 	} else if options[0] == "mssql" {
 		m = Model{Db: db, ColumnStr: "id", PrimaryKey: "id", QuoteIdentifier: "", ParamIdentifier: options[0].(string), ParamIteration: 1}
 	}
@@ -460,7 +460,10 @@ func (orm *Model) Insert(properties map[string]interface{}) (int64, error) {
 	if orm.ParamIdentifier == "pg" {
 		statement = fmt.Sprintf("%v RETURNING %v", statement, snakeCasedName(orm.PrimaryKey))
 		var id int64
-		orm.Db.QueryRow(statement, args...).Scan(&id)
+		err := orm.Db.QueryRow(statement, args...).Scan(&id)
+		if err != nil {
+			return -1, err
+		}
 		return id, nil
 	} else {
 		res, err := orm.Exec(statement, args...)
