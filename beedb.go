@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"log"
 )
 
 var OnDebug = false
@@ -167,7 +166,6 @@ func (orm *Model) Find(output interface{}) error {
 		return errors.New("No record found")
 	} else if len(resultsSlice) == 1 {
 		results := resultsSlice[0]
-		log.Println(results)
 		err := scanMapIntoStruct(output, results)
 		if err != nil {
 			return err
