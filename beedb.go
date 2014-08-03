@@ -460,7 +460,10 @@ func (orm *Model) Insert(properties map[string]interface{}) (int64, error) {
 	if orm.ParamIdentifier == "pg" {
 		statement = fmt.Sprintf("%v RETURNING %v", statement, snakeCasedName(orm.PrimaryKey))
 		var id int64
-		orm.Db.QueryRow(statement, args...).Scan(&id)
+		err := orm.Db.QueryRow(statement, args...).Scan(&id)
+		if err != nil {
+			return -1, err
+		}
 		return id, nil
 	} else {
 		res, err := orm.Exec(statement, args...)
