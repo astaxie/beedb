@@ -1,11 +1,13 @@
-beedb
+Beedb
 =====
 
-beedb is an ORM for Go. It lets you map Go structs to tables in a database. It's intended to be very lightweight, doing very little beyond what you really want. For example, when fetching data, instead of re-inventing a query syntax, we just delegate your query to the underlying database, so you can write the "where" clause of your SQL statements directly. This allows you to have more flexibility while giving you a convenience layer. But beedb also has some smart defaults, for those times when complex queries aren't necessary.
+:exclamation: **IMPORTANT:** Beedb is being deprecated in favor of [Beego.orm](https://github.com/astaxie/beego/tree/master/orm) :exclamation:
 
-Right now, it interfaces with Mysql/SQLite/PostgreSQL/DB2/MS ADODB/ODBC/Oracle. The goal however is to add support for other databases in the future, including maybe MongoDb or NoSQL? 
+Beedb is an ORM for Go. It lets you map Go structs to tables in a database. It's intended to be very lightweight, doing very little beyond what you really want. For example, when fetching data, instead of re-inventing a query syntax, we just delegate your query to the underlying database, so you can write the "where" clause of your SQL statements directly. This allows you to have more flexibility while giving you a convenience layer. But beedb also has some smart defaults, for those times when complex queries aren't necessary.
 
-Also, at the moment, relationship-support is in the works, but not yet implemented.
+Right now, it interfaces with Mysql/SQLite/PostgreSQL/DB2/MS ADODB/ODBC/Oracle. The goal however is to add support for other databases in the future, including maybe MongoDb or NoSQL?
+
+Relationship-support is not implemented, for this we will recommend you to use [Beego.orm](https://github.com/astaxie/beego/tree/master/orm).
 
 All in all, it's not entirely ready for advanced use yet, but it's getting there.
 
@@ -27,12 +29,12 @@ ODBC: [bitbucket.org/miquella/mgodbc](https://bitbucket.org/miquella/mgodbc)`[*]
 
 Oracle: [github.com/mattn/go-oci8](https://github.com/mattn/go-oci8)
 
-Drivers marked with a `[*]` are tested with beedb
+Drivers marked with a `[*]` are tested with Beedb
 
-### API Interface 
+### API Interface
 [wiki/API-Interface](https://github.com/astaxie/beedb/wiki/API-Interface)
 
-### Installing beedb
+### Installing Beedb
     go get github.com/astaxie/beedb
 
 ### How do we use it?
@@ -52,9 +54,9 @@ with PostgreSQL,
 ```go
 orm := beedb.New(db, "pg")
 ```
-	
+
 Open Debug log, turn on the debug
-  
+
 ```go
 beedb.OnDebug=true
 ```
@@ -71,9 +73,9 @@ type Userinfo struct {
 ```
 
 ###***Caution***
-The structs Name 'UserInfo' will turn into the table name 'USER_INFO', as defined by the **tname** tag.	
+The structs Name 'UserInfo' will turn into the table name 'USER_INFO', as defined by the **tname** tag.
 If the key 'UserName' will turn into the select colum 'USERNAME' because of the **sql** tag.
-	
+
 
 Create an object and save it
 
@@ -88,7 +90,7 @@ orm.Save(&saveone)
 Saving new and existing objects
 
 ```go
-saveone.Username = "Update Username"  
+saveone.Username = "Update Username"
 saveone.Departname = "Update Departname"
 saveone.Created = time.Now()
 orm.Save(&saveone)  //now saveone has the primarykey value it will update
@@ -126,7 +128,7 @@ err := orm.FindAll(&everyone)
 Find result as Map
 
 ```go
-//Original SQL Backinfo resultsSlice []map[string][]byte 
+//Original SQL Backinfo resultsSlice []map[string][]byte
 //default PrimaryKey id
 a, _ := orm.SetTable("userinfo").SetPK("uid").Where(2).Select("uid,username").FindMap()
 ```
@@ -147,7 +149,7 @@ Update batch with Map
 orm.SetTable("userinfo").Where("uid>?", 3).Update(t)
 ```
 
-Insert data with Map	
+Insert data with Map
 
 ```go
 add := make(map[string]interface{})
